@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    畅径 M10 回归 harness（控制台 + WPF 进程内）
+    - 真实 MainWindow + 真实主题资源；覆盖 M5~M9 各阶段验证要点
+    - 测试数据只在 %TEMP%\cj-reg-*，结束清理（保留名用 \\?\ 删除）
+    - 不属于产品解决方案；由 tests\run-regression.ps1 单独构建 / 运行
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <WindowsSdkPackageVersion>10.0.17763.56</WindowsSdkPackageVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>ChangJing.Regression</AssemblyName>
+    <RootNamespace>ChangJing.Regression</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- 由本项目管理自己的 Main，禁止 SDK 生成入口 -->
+    <StartupObject>ChangJing.Regression.Program</StartupObject>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ChangJing.App\ChangJing.App.csproj" />
+  </ItemGroup>
+
+</Project>

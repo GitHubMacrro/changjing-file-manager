@@ -1,0 +1,185 @@
+<UserControl x:Class="ChangJing.App.Controls.AddressBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignWidth="600"
+             d:DesignHeight="60"
+             AutomationProperties.AutomationId="AddressBar"
+             AutomationProperties.Name="地址栏">
+    <UserControl.Resources>
+        <Style x:Key="CrumbButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Cursor" Value="Arrow" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CrumbChevronStyle" TargetType="Button" BasedOn="{StaticResource CrumbButtonStyle}">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Width="{TemplateBinding Width}">
+                            <TextBlock HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       Text="›" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CrumbCollapseStyle" TargetType="Button" BasedOn="{StaticResource CrumbButtonStyle}">
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Content" Value="《" />
+        </Style>
+
+        <Style x:Key="PopupItemStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border x:Name="Chrome"
+                Grid.Row="0"
+                Height="34"
+                Background="{DynamicResource CjInputBackgroundBrush}"
+                BorderBrush="{DynamicResource CjCardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource CjInputCornerRadius}"
+                MouseLeftButtonDown="OnChromeMouseDown">
+            <Grid Margin="2,0">
+                <Grid x:Name="BreadcrumbHost">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="CollapseButton"
+                            Grid.Column="0"
+                            Style="{StaticResource CrumbCollapseStyle}"
+                            Visibility="Collapsed"
+                            ToolTip="显示被折叠的上级"
+                            AutomationProperties.Name="折叠的上级"
+                            Click="OnCollapseClick" />
+                    <ScrollViewer x:Name="SegmentScroller"
+                                  Grid.Column="1"
+                                  HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  CanContentScroll="False"
+                                  Focusable="False">
+                        <StackPanel x:Name="SegmentPanel"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center" />
+                    </ScrollViewer>
+                </Grid>
+
+                <TextBox x:Name="EditBox"
+                         Visibility="Collapsed"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                         VerticalContentAlignment="Center"
+                         FontSize="{x:Static SystemFonts.MessageFontSize}"
+                         Padding="6,0"
+                         AutomationProperties.AutomationId="AddressEditBox"
+                         AutomationProperties.Name="地址栏编辑"
+                         KeyDown="OnEditBoxKeyDown"
+                         LostKeyboardFocus="OnEditBoxLostFocus" />
+            </Grid>
+        </Border>
+
+        <TextBlock x:Name="ErrorText"
+                   Grid.Row="1"
+                   Margin="4,2,0,0"
+                   FontSize="11"
+                   Foreground="{DynamicResource CjDangerBrush}"
+                   TextWrapping="Wrap"
+                   Visibility="Collapsed" />
+
+        <Popup x:Name="DropPopup"
+               Grid.Row="0"
+               Placement="Bottom"
+               StaysOpen="False"
+               AllowsTransparency="True"
+               PopupAnimation="Fade">
+            <Border Margin="0,2,0,0"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <ScrollViewer MaxHeight="360"
+                              MinWidth="180"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="DropPanel" Margin="4" />
+                </ScrollViewer>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

@@ -1,0 +1,654 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Private.CoreLib"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <!-- 调色板由 App.xaml 顶层合并、ThemeService 只替换那一槽，故颜色一律走 DynamicResource 才能换肤即时生效 -->
+
+    <GridLength x:Key="CjSplitterGridLength">5</GridLength>
+
+    <CornerRadius x:Key="CjCardCornerRadius">8</CornerRadius>
+    <CornerRadius x:Key="CjCardInnerCornerRadius">7</CornerRadius>
+    <CornerRadius x:Key="CjInputCornerRadius">6</CornerRadius>
+    <CornerRadius x:Key="CjBadgeCornerRadius">9</CornerRadius>
+    <Thickness x:Key="CjCardBorderThickness">1</Thickness>
+    <Thickness x:Key="CjCardMargin">8</Thickness>
+    <Thickness x:Key="CjCardPadding">6</Thickness>
+    <Thickness x:Key="CjDialogPadding">18</Thickness>
+    <sys:Double x:Key="CjRowHeight">28</sys:Double>
+    <sys:Double x:Key="CjCompactRowHeight">22</sys:Double>
+    <sys:Double x:Key="CjListRowHeight">22</sys:Double>
+    <sys:Double x:Key="CjContentRowHeight">60</sys:Double>
+    <sys:Double x:Key="CjHeaderHeight">25</sys:Double>
+    <sys:Double x:Key="CjTreeRowHeight">28</sys:Double>
+    <sys:Double x:Key="CjSplitterWidth">5</sys:Double>
+    <sys:Double x:Key="CjStatusBarHeight">24</sys:Double>
+    <sys:Double x:Key="CjTileWidth">240</sys:Double>
+    <sys:Double x:Key="CjTileHeight">56</sys:Double>
+
+    <!-- x:Shared=False 保证每个元素独立实例 -->
+    <DropShadowEffect x:Key="CjCardShadowEffect"
+                      x:Shared="False"
+                      BlurRadius="8"
+                      ShadowDepth="1"
+                      Direction="270"
+                      Opacity="0.08"
+                      Color="#FF000000" />
+
+    <Style TargetType="{x:Type ui:FluentWindow}" BasedOn="{StaticResource {x:Type ui:FluentWindow}}">
+        <Setter Property="FontFamily" Value="{x:Static SystemFonts.MessageFontFamily}" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <!-- 高 DPI：开启布局取整 + 对齐设备像素，配合 app.manifest 的 PerMonitorV2，1px 线不模糊 -->
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="CjSplitterStyle" TargetType="{x:Type GridSplitter}">
+        <Setter Property="Width" Value="{StaticResource CjSplitterWidth}" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="ResizeBehavior" Value="PreviousAndNext" />
+        <Setter Property="ResizeDirection" Value="Columns" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type GridSplitter}">
+                    <Grid Background="Transparent">
+                        <Rectangle x:Name="Line"
+                                   Width="1"
+                                   HorizontalAlignment="Center"
+                                   Fill="{DynamicResource CjSplitterHoverBrush}"
+                                   Opacity="0" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Line" Property="Opacity" Value="1" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="CjPanelDividerStyle" TargetType="{x:Type Border}">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource CjPanelDividerBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style x:Key="CjCardBorderStyle" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="{DynamicResource CjCardBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CjCardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{StaticResource CjCardBorderThickness}" />
+        <Setter Property="CornerRadius" Value="{StaticResource CjCardCornerRadius}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!-- 阴影画在叠底层，内容不被 Effect 包裹，避免虚拟化列表滚动时反复光栅化 -->
+    <Style x:Key="CjCardPanelStyle" TargetType="{x:Type ContentControl}">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContentControl}">
+                    <Grid>
+                        <Border Background="{DynamicResource CjCardBackgroundBrush}"
+                                CornerRadius="{StaticResource CjCardCornerRadius}"
+                                Effect="{StaticResource CjCardShadowEffect}" />
+                        <Border Background="{DynamicResource CjCardBackgroundBrush}"
+                                BorderBrush="{DynamicResource CjCardBorderBrush}"
+                                BorderThickness="{StaticResource CjCardBorderThickness}"
+                                CornerRadius="{StaticResource CjCardCornerRadius}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 不改写 ControlTemplate：WPF-UI 默认模板已呈现 Icon 与 Content，DropDownButton 靠它画下拉箭头 -->
+    <Style x:Key="CommandBarButtonStyle" TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="Appearance" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="9,5" />
+        <Setter Property="Margin" Value="1,0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource CjDisabledTextBrush}" />
+                <Setter Property="Opacity" Value="0.55" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="CjToolbarSeparatorStyle" TargetType="{x:Type Border}">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="Margin" Value="6,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource CjCardBorderBrush}" />
+    </Style>
+
+    <Style x:Key="CommandBarToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Padding" Value="9,5" />
+        <Setter Property="Margin" Value="1,0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource CjInputCornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Background" Value="Transparent" />
+                            <Setter Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ToolbarTextBoxStyle" TargetType="{x:Type ui:TextBox}" BasedOn="{StaticResource {x:Type ui:TextBox}}">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+    </Style>
+
+    <Style x:Key="NavigationTreeExpanderStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border Background="Transparent">
+                        <Path x:Name="Arrow"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Data="M 0,0 L 4,4 L 0,8"
+                              RenderTransformOrigin="0.5,0.5"
+                              Stroke="{DynamicResource CjTextSecondaryBrush}"
+                              StrokeThickness="1.4" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Arrow" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="90" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource CjTextPrimaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="NavigationTreeItemStyle" TargetType="{x:Type TreeViewItem}">
+        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinHeight" Value="{StaticResource CjTreeRowHeight}" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TreeViewItem}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ToggleButton x:Name="Expander"
+                                          Grid.Column="0"
+                                          VerticalAlignment="Center"
+                                          Style="{StaticResource NavigationTreeExpanderStyle}"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          ClickMode="Press" />
+                            <Grid Grid.Column="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="3" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="Bd"
+                                        Grid.ColumnSpan="2"
+                                        Background="{TemplateBinding Background}"
+                                        CornerRadius="{StaticResource CjInputCornerRadius}"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter x:Name="PART_Header"
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Center"
+                                                      ContentSource="Header" />
+                                </Border>
+                                <Rectangle x:Name="AccentBar"
+                                           Grid.Column="0"
+                                           Width="3"
+                                           RadiusX="1.5"
+                                           RadiusY="1.5"
+                                           Margin="0,5"
+                                           VerticalAlignment="Stretch"
+                                           Fill="{DynamicResource CjAccentBrush}"
+                                           Visibility="Collapsed" />
+                            </Grid>
+                        </Grid>
+                        <ItemsPresenter x:Name="ItemsHost"
+                                        Margin="16,0,0,0" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="False">
+                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                            <Setter TargetName="AccentBar" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="False" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <HierarchicalDataTemplate x:Key="NavigationTreeHeaderTemplate" ItemsSource="{Binding Children}">
+        <StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Image Width="16"
+                       Height="16"
+                       Margin="0,0,8,0"
+                       VerticalAlignment="Center"
+                       Source="{Binding Icon}" />
+                <TextBlock VerticalAlignment="Center"
+                           Text="{Binding DisplayName}"
+                           ToolTip="{Binding ToolTip}"
+                           TextTrimming="CharacterEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+                            <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="Group">
+                                    <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+                                    <Setter Property="FontSize" Value="12" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+            <TextBlock Margin="24,2,0,0"
+                       FontSize="11"
+                       Text="{Binding LoadFailureMessage}"
+                       TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding LoadFailureMessage}"
+                       Foreground="{DynamicResource CjTextSecondaryBrush}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasLoadFailure}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+    </HierarchicalDataTemplate>
+
+    <Style x:Key="FileListHeaderGripperStyle" TargetType="{x:Type Thumb}">
+        <Setter Property="Cursor" Value="SizeWE" />
+        <Setter Property="Width" Value="8" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <Grid Background="Transparent">
+                        <Rectangle x:Name="GripLine"
+                                   Width="1"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,6"
+                                   Fill="{DynamicResource CjCardBorderBrush}"
+                                   Opacity="0" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="GripLine" Property="Opacity" Value="1" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="FileListHeaderStyle" TargetType="{x:Type GridViewColumnHeader}"
+           BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+        <Setter Property="Background" Value="{DynamicResource CjHeaderBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Height" Value="{StaticResource CjHeaderHeight}" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type GridViewColumnHeader}">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <!-- 内容由代码后置组装，故用 Stretch 对齐 -->
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <Rectangle x:Name="Divider"
+                                   Width="1"
+                                   Margin="0,6"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Stretch"
+                                   Fill="{DynamicResource CjCardBorderBrush}"
+                                   Visibility="Collapsed" />
+                        <Thumb x:Name="PART_HeaderGripper"
+                               Style="{StaticResource FileListHeaderGripperStyle}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <!-- 末尾填充表头透明、无分隔线，避免滚动条上方出现亮块 -->
+                        <Trigger Property="Role" Value="Padding">
+                            <Setter TargetName="Bd" Property="Background" Value="Transparent" />
+                            <Setter TargetName="Divider" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_HeaderGripper" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Role" Value="Floating">
+                            <Setter TargetName="PART_HeaderGripper" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Divider" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <!-- 填充表头走 WPF-UI 自带模板，触发不到上面自定义模板，故单独设透明背景 -->
+        <Style.Triggers>
+            <Trigger Property="Role" Value="Padding">
+                <Setter Property="Background" Value="Transparent" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- 自定义模板保留 GridViewRowPresenter，虚拟化 Recycling 不受影响 -->
+    <Style x:Key="FileListRowStyle" TargetType="{x:Type ui:ListViewItem}">
+        <Setter Property="Height" Value="{StaticResource CjRowHeight}" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ui:ListViewItem}">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="Transparent" />
+                        <!-- 强调竖条叠在行最左侧，不占列宽，避免与表头列错位 -->
+                        <Rectangle x:Name="AccentBar"
+                                   Width="3"
+                                   RadiusX="1.5"
+                                   RadiusY="1.5"
+                                   Margin="0,5"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Stretch"
+                                   Fill="{DynamicResource CjAccentBrush}"
+                                   Visibility="Collapsed" />
+                        <ui:GridViewRowPresenter Content="{TemplateBinding Content}"
+                                                 Margin="{TemplateBinding Padding}"
+                                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <ui:GridViewRowPresenter.Columns>
+                                <TemplateBinding Property="GridView.ColumnCollection" />
+                            </ui:GridViewRowPresenter.Columns>
+                        </ui:GridViewRowPresenter>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                            <Setter TargetName="AccentBar" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="False" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsHidden}" Value="True">
+                <Setter Property="Opacity" Value="0.55" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsCut}" Value="True">
+                <Setter Property="Opacity" Value="0.45" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="FileListRowCompactStyle" TargetType="{x:Type ui:ListViewItem}"
+           BasedOn="{StaticResource FileListRowStyle}">
+        <Setter Property="Height" Value="{StaticResource CjCompactRowHeight}" />
+    </Style>
+
+    <Style x:Key="LongPathBadgeStyle" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="4,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="6,0,0,0" />
+    </Style>
+
+    <Style x:Key="CjPlainListRowStyle" TargetType="{x:Type ListViewItem}">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListViewItem}">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="Transparent" />
+                        <Rectangle x:Name="AccentBar"
+                                   Width="3"
+                                   RadiusX="1.5"
+                                   RadiusY="1.5"
+                                   Margin="0,5"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Stretch"
+                                   Fill="{DynamicResource CjAccentBrush}"
+                                   Visibility="Collapsed" />
+                        <GridViewRowPresenter Content="{TemplateBinding Content}"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <GridViewRowPresenter.Columns>
+                                <TemplateBinding Property="GridView.ColumnCollection" />
+                            </GridViewRowPresenter.Columns>
+                        </GridViewRowPresenter>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                            <Setter TargetName="AccentBar" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="False" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="StatusBarTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="StatusBarButtonStyle" TargetType="{x:Type ui:Button}"
+           BasedOn="{StaticResource CommandBarButtonStyle}">
+        <Setter Property="Padding" Value="6,1" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style x:Key="StatusBarIconButtonStyle" TargetType="{x:Type ui:Button}"
+           BasedOn="{StaticResource CommandBarButtonStyle}">
+        <Setter Property="Padding" Value="3,1" />
+    </Style>
+
+    <Style x:Key="PreviewPlaceholderStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="16" />
+    </Style>
+
+    <!-- 用隐式样式，代码里构建的 MenuItem 也会自动套用 -->
+    <Style TargetType="{x:Type ui:MenuItem}"
+           BasedOn="{StaticResource {x:Type ui:MenuItem}}">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="CjDialogRootStyle" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="{DynamicResource CjCardBackgroundBrush}" />
+        <Setter Property="Padding" Value="{StaticResource CjDialogPadding}" />
+    </Style>
+
+    <Style x:Key="CjSecondaryButtonStyle" TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="Appearance" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CjCardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Setter Property="Padding" Value="12,5" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+    </Style>
+
+    <Style x:Key="CjPrimaryButtonStyle" TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="Appearance" Value="Primary" />
+        <Setter Property="Padding" Value="12,5" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+    </Style>
+
+    <Style x:Key="PropertyLabelStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="Margin" Value="0,0,14,8" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="TextAlignment" Value="Right" />
+    </Style>
+
+    <Style x:Key="PropertyValueStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
+    <Style x:Key="CjListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="{StaticResource CjInputCornerRadius}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Rectangle x:Name="AccentBar"
+                                       Grid.Column="0"
+                                       Width="3"
+                                       RadiusX="1.5"
+                                       RadiusY="1.5"
+                                       Margin="0,5"
+                                       VerticalAlignment="Stretch"
+                                       Fill="{DynamicResource CjAccentBrush}"
+                                       Visibility="Collapsed" />
+                            <ContentPresenter Grid.Column="1"
+                                              Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center" />
+                        </Grid>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                            <Setter TargetName="AccentBar" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="False" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

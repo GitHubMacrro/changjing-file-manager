@@ -1,0 +1,191 @@
+<ui:FluentWindow x:Class="ChangJing.App.Views.OperationProgressWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:controls="clr-namespace:ChangJing.App.Controls"
+                 xmlns:vm="clr-namespace:ChangJing.App.ViewModels"
+                 Title="文件操作"
+                 Width="560"
+                 MinWidth="480"
+                 MinHeight="140"
+                 SizeToContent="Height"
+                 MaxHeight="640"
+                 ShowInTaskbar="False"
+                 Background="{DynamicResource CjCardBackgroundBrush}"
+                 WindowBackdropType="None"
+                 WindowStartupLocation="Manual"
+                 ExtendsContentIntoTitleBar="True">
+    <Grid Background="{DynamicResource CjCardBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0"
+                     x:Name="ProgressTitleBar"
+                     Title="{Binding TitleText}"
+                     Background="{DynamicResource CjCardBackgroundBrush}"
+                     ShowHelp="False"
+                     ShowMinimize="True"
+                     ShowMaximize="False"
+                     ShowClose="False" />
+
+        <Grid Grid.Row="1" Margin="16,4,16,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="HeaderText"
+                       Grid.Column="0"
+                       VerticalAlignment="Center"
+                       FontSize="{x:Static SystemFonts.MessageFontSize}"
+                       FontWeight="SemiBold"
+                       Text="{Binding TitleText}" />
+            <ui:Button Grid.Column="1"
+                       Command="{Binding ToggleExpandCommand}"
+                       Content="{Binding ExpandButtonText}"
+                       FontSize="12"
+                       Padding="8,2" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="2"
+                      MaxHeight="520"
+                      Margin="0,0,0,8"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
+            <ItemsControl ItemsSource="{Binding Tasks}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:OperationTaskViewModel}">
+                        <Border Margin="12,4,12,8"
+                                Padding="12"
+                                Background="{DynamicResource CjInputBackgroundBrush}"
+                                BorderBrush="{DynamicResource CjCardBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CjCardInnerCornerRadius}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                    <TextBlock FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding KindText}" />
+                                    <TextBlock Margin="8,0,0,0"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding RouteText}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding RouteText}" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="1"
+                                           Margin="0,8,0,0"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="正在计算…"
+                                           Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}" />
+
+                                <Grid Grid.Row="1" Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding CurrentFileName}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding CurrentFileName}"
+                                               Visibility="{Binding IsScanning, Converter={StaticResource InverseBoolToVisibility}}" />
+                                    <TextBlock Grid.Column="1"
+                                               VerticalAlignment="Center"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding PercentText}"
+                                               Visibility="{Binding IsScanning, Converter={StaticResource InverseBoolToVisibility}}" />
+                                </Grid>
+
+                                <ProgressBar Grid.Row="2"
+                                             Height="6"
+                                             Margin="0,6,0,0"
+                                             Maximum="100"
+                                             Value="{Binding Percent}" />
+
+                                <StackPanel Grid.Row="3"
+                                            Margin="0,6,0,0"
+                                            Orientation="Horizontal">
+                                    <TextBlock FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding BytesText}" />
+                                    <TextBlock Margin="10,0,0,0"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding CountText}" />
+                                    <TextBlock Margin="10,0,0,0"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding SpeedText}" />
+                                    <TextBlock Margin="10,0,0,0"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding RemainingText}" />
+                                    <TextBlock Margin="10,0,0,0"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding StatusText}" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="4"
+                                           Margin="0,6,0,0"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="{Binding SummaryText}"
+                                           TextWrapping="Wrap"
+                                           Visibility="{Binding IsFinished, Converter={StaticResource BoolToVisibility}}" />
+
+                                <StackPanel Grid.Row="5"
+                                            Margin="0,10,0,0"
+                                            Orientation="Horizontal">
+                                    <ui:Button MinWidth="80"
+                                               Command="{Binding PauseResumeCommand}"
+                                               Content="{Binding PauseResumeText}"
+                                               Style="{StaticResource CjSecondaryButtonStyle}"
+                                               IsEnabled="{Binding CanPauseResume}"
+                                               Visibility="{Binding IsFinished, Converter={StaticResource InverseBoolToVisibility}}" />
+                                    <ui:Button MinWidth="80"
+                                               Margin="8,0,0,0"
+                                               Style="{StaticResource CjSecondaryButtonStyle}"
+                                               Click="OnCancelTaskClick"
+                                               Content="取消"
+                                               Visibility="{Binding IsFinished, Converter={StaticResource InverseBoolToVisibility}}" />
+                                    <ui:Button MinWidth="110"
+                                               Style="{StaticResource CjSecondaryButtonStyle}"
+                                               Command="{Binding ViewErrorsCommand}"
+                                               Content="查看失败项"
+                                               Visibility="{Binding HasErrors, Converter={StaticResource BoolToVisibility}}" />
+                                    <ui:Button MinWidth="80"
+                                               Margin="8,0,0,0"
+                                               Style="{StaticResource CjSecondaryButtonStyle}"
+                                               Command="{Binding DismissCommand}"
+                                               Content="关闭"
+                                               Visibility="{Binding CanDismiss, Converter={StaticResource BoolToVisibility}}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</ui:FluentWindow>

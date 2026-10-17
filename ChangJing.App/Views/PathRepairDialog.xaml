@@ -1,0 +1,338 @@
+<ui:FluentWindow x:Class="ChangJing.App.Views.PathRepairDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:controls="clr-namespace:ChangJing.App.Controls"
+                 xmlns:vm="clr-namespace:ChangJing.App.ViewModels"
+                 Title="修复路径"
+                 Width="880"
+                 Height="600"
+                 MinWidth="720"
+                 MinHeight="460"
+                 ShowInTaskbar="False"
+                 Background="{DynamicResource CjCardBackgroundBrush}"
+                 WindowBackdropType="None"
+                 WindowStartupLocation="CenterOwner"
+                 ExtendsContentIntoTitleBar="True">
+    <Grid Background="{DynamicResource CjCardBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0"
+                     Title="修复路径"
+                     Background="{DynamicResource CjCardBackgroundBrush}"
+                     ShowHelp="False"
+                     ShowMinimize="False"
+                     ShowMaximize="False"
+                     ShowClose="True" />
+
+        <TextBlock Grid.Row="1"
+                   Margin="24,8,24,0"
+                   FontSize="{x:Static SystemFonts.MessageFontSize}"
+                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                   TextWrapping="Wrap"
+                   Text="以下项目的路径或名称让 Windows 资源管理器无法正常打开。畅径可以帮你改名或移动到较短的位置，修复后即可在资源管理器中正常使用。" />
+
+        <Grid Grid.Row="2" Margin="24,12,24,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="ScanStatusText"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Foreground="{DynamicResource CjTextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding ScanStatus}" />
+                <ui:Button x:Name="CancelScanButton"
+                           Grid.Column="1"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Content="取消扫描"
+                           Command="{Binding CancelScanCommand}"
+                           Visibility="{Binding IsScanning, Converter={StaticResource BoolToVisibility}}"
+                           AutomationProperties.Name="取消扫描" />
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="0,10,0,0" Orientation="Horizontal">
+                <RadioButton x:Name="RenameModeRadio"
+                             GroupName="RepairMode"
+                             VerticalAlignment="Center"
+                             Content="重命名修复"
+                             IsChecked="{Binding IsRenameMode, Mode=OneWay}"
+                             Checked="OnRenameModeChecked"
+                             AutomationProperties.Name="重命名修复" />
+                <RadioButton x:Name="MoveModeRadio"
+                             GroupName="RepairMode"
+                             Margin="20,0,0,0"
+                             VerticalAlignment="Center"
+                             Content="移动到较短位置"
+                             IsChecked="{Binding IsMoveMode, Mode=OneWay}"
+                             Checked="OnMoveModeChecked"
+                             AutomationProperties.Name="移动到较短位置" />
+
+                <CheckBox x:Name="ShortenFolderCheck"
+                          Margin="28,0,0,0"
+                          VerticalAlignment="Center"
+                          Content="缩短所在文件夹名"
+                          IsChecked="{Binding ShortenParentFolders, Mode=TwoWay}"
+                          Visibility="{Binding IsRenameMode, Converter={StaticResource BoolToVisibility}}"
+                          ToolTip="对提示「建议同时缩短上级文件夹」的项目，一并把上级文件夹改名变短。"
+                          AutomationProperties.Name="缩短所在文件夹名" />
+            </StackPanel>
+
+            <Grid Grid.Row="1"
+                  Margin="0,34,0,0"
+                  Visibility="{Binding IsMoveMode, Converter={StaticResource BoolToVisibility}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="移动到：" />
+                <TextBox x:Name="MoveTargetBox"
+                         Grid.Column="1"
+                         Margin="8,0,0,0"
+                         VerticalContentAlignment="Center"
+                         Text="{Binding MoveTargetPath, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="移动目标文件夹" />
+                <ui:Button x:Name="BrowseTargetButton"
+                           Grid.Column="2"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Content="浏览…"
+                           Click="OnBrowseTargetClick"
+                           AutomationProperties.Name="浏览" />
+            </Grid>
+        </Grid>
+
+        <ListView x:Name="RepairList"
+                  Grid.Row="3"
+                  Margin="24,12,24,0"
+                  ItemsSource="{Binding Items}"
+                  BorderBrush="{DynamicResource CjCardBorderBrush}"
+                  BorderThickness="1"
+                  SelectionMode="Single"
+                  ItemContainerStyle="{StaticResource CjPlainListRowStyle}"
+                  AutomationProperties.Name="修复项列表">
+            <ListView.View>
+                <GridView ColumnHeaderContainerStyle="{StaticResource FileListHeaderStyle}">
+                    <GridViewColumn Width="40">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          AutomationProperties.Name="选择此项" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="问题项" Width="250">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <controls:MiddleEllipsisTextBlock VerticalAlignment="Center"
+                                                                  Text="{Binding Name}"
+                                                                  KeepLastSegment="False"
+                                                                  ToolTip="{Binding ToolTipText}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="问题类型" Width="120">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{Binding IssueText}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding IssueText}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="当前长度" Width="80">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Center"
+                                           HorizontalAlignment="Right"
+                                           Text="{Binding CurrentLength}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="建议新名称" Width="240">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Padding="3,1"
+                                         VerticalContentAlignment="Center"
+                                         Text="{Binding SuggestedName, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="{Binding ValidationError}"
+                                         AutomationProperties.Name="建议新名称">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource CjDangerBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="修复后长度" Width="90">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Center"
+                                           HorizontalAlignment="Right"
+                                           Text="{Binding LengthText}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <StackPanel Grid.Row="4" Margin="24,8,24,0">
+            <TextBlock x:Name="FolderShortenHint"
+                       FontSize="12"
+                       Foreground="{DynamicResource CjBadgeForegroundBrush}"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding HasFolderShortenSuggestion, Converter={StaticResource BoolToVisibility}}"
+                       Text="部分项目的上级文件夹也过长，已勾选「缩短所在文件夹名」时会一并改名。" />
+        </StackPanel>
+
+        <Grid Grid.Row="5" Margin="24,12,24,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       VerticalAlignment="Center"
+                       FontSize="12"
+                       Foreground="{DynamicResource CjTextSecondaryBrush}"
+                       Text="{Binding SelectedCountText}" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ui:Button x:Name="ExecuteButton"
+                           MinWidth="110"
+                           Style="{StaticResource CjPrimaryButtonStyle}"
+                           Content="开始修复"
+                           Click="OnExecuteClick"
+                           IsEnabled="{Binding CanExecute}"
+                           AutomationProperties.Name="开始修复" />
+                <ui:Button x:Name="CancelButton"
+                           MinWidth="88"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Content="取消"
+                           Click="OnCancelClick"
+                           AutomationProperties.Name="取消" />
+            </StackPanel>
+        </Grid>
+
+        <Border x:Name="CompletedPanel"
+                Grid.RowSpan="6"
+                Panel.ZIndex="20"
+                Background="{DynamicResource CjCardBackgroundBrush}"
+                Visibility="Collapsed">
+            <StackPanel Margin="40"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                <ui:SymbolIcon Symbol="CheckmarkCircle48"
+                               FontSize="48"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource CjAccentBrush}" />
+                <TextBlock x:Name="CompletedText"
+                           Margin="0,16,0,0"
+                           HorizontalAlignment="Center"
+                           FontSize="{x:Static SystemFonts.MessageFontSize}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           MaxWidth="560"
+                           Text="已修复。" />
+                <TextBlock x:Name="CompletedDetailText"
+                           Margin="0,8,0,0"
+                           HorizontalAlignment="Center"
+                           FontSize="12"
+                           Foreground="{DynamicResource CjTextSecondaryBrush}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           MaxWidth="560" />
+                <TextBlock x:Name="FailureHeaderText"
+                           Margin="0,16,0,0"
+                           HorizontalAlignment="Left"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource CjDangerBrush}"
+                           Text="以下项目未能修复："
+                           Visibility="Collapsed" />
+                <ListView x:Name="FailureList"
+                          Margin="0,4,0,0"
+                          Width="560"
+                          MaxHeight="180"
+                          HorizontalAlignment="Center"
+                          BorderBrush="{DynamicResource CjCardBorderBrush}"
+                          BorderThickness="1"
+                          SelectionMode="Single"
+                          ItemContainerStyle="{StaticResource CjPlainListRowStyle}"
+                          Visibility="Collapsed"
+                          AutomationProperties.Name="未修复项目列表">
+                    <ListView.View>
+                        <GridView ColumnHeaderContainerStyle="{StaticResource FileListHeaderStyle}">
+                            <GridViewColumn Header="未修复项目" Width="260">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <controls:MiddleEllipsisTextBlock VerticalAlignment="Center"
+                                                                          Text="{Binding Name}"
+                                                                          KeepLastSegment="False"
+                                                                          ToolTip="{Binding ToolTipText}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="原因" Width="280">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock VerticalAlignment="Center"
+                                                   Text="{Binding Reason}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding ToolTipText}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <StackPanel Margin="0,24,0,0"
+                            HorizontalAlignment="Center"
+                            Orientation="Horizontal">
+                    <ui:Button x:Name="OpenFolderButton"
+                               MinWidth="120"
+                               Style="{StaticResource CjPrimaryButtonStyle}"
+                               Content="打开所在文件夹"
+                               Click="OnOpenFolderClick"
+                               AutomationProperties.Name="打开所在文件夹" />
+                    <ui:Button x:Name="CloseCompletedButton"
+                               MinWidth="88"
+                               Margin="8,0,0,0"
+                               Style="{StaticResource CjSecondaryButtonStyle}"
+                               Content="关闭"
+                               Click="OnCancelClick"
+                               AutomationProperties.Name="关闭" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

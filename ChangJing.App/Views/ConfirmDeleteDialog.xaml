@@ -1,0 +1,116 @@
+<ui:FluentWindow x:Class="ChangJing.App.Views.ConfirmDeleteDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:vm="clr-namespace:ChangJing.App.ViewModels"
+                 Title="确认删除"
+                 Width="560"
+                 SizeToContent="Height"
+                 MaxHeight="600"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 Background="{DynamicResource CjCardBackgroundBrush}"
+                 WindowBackdropType="None"
+                 WindowStartupLocation="CenterOwner"
+                 ExtendsContentIntoTitleBar="True">
+    <Grid Background="{DynamicResource CjCardBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar x:Name="DialogTitleBar"
+                     Grid.Row="0"
+                     Title="确认删除"
+                     Background="{DynamicResource CjCardBackgroundBrush}"
+                     ShowHelp="False"
+                     ShowMinimize="False"
+                     ShowMaximize="False"
+                     ShowClose="True" />
+
+        <StackPanel Grid.Row="1" Margin="24,12,24,0" Orientation="Horizontal">
+            <ui:SymbolIcon Symbol="Delete20"
+                           Margin="0,1,12,0"
+                           VerticalAlignment="Top"
+                           Foreground="{DynamicResource CjDangerBrush}" />
+            <StackPanel>
+                <TextBlock x:Name="PromptText"
+                           FontSize="{x:Static SystemFonts.MessageFontSize}"
+                           TextWrapping="Wrap" />
+                <TextBlock x:Name="WarningText"
+                           Margin="0,6,0,0"
+                           FontSize="{x:Static SystemFonts.MessageFontSize}"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource CjDangerBrush}"
+                           Text="永久删除后无法撤销，文件不会进入回收站。"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </StackPanel>
+
+        <Border x:Name="DetailBox"
+                Grid.Row="2"
+                Margin="24,12,24,0"
+                Padding="10,8"
+                MaxHeight="260"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <Grid x:Name="SingleItemPanel" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Image x:Name="ItemIcon"
+                               Grid.Column="0"
+                               Width="48"
+                               Height="48"
+                               Margin="0,0,12,0"
+                               VerticalAlignment="Top"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock x:Name="ItemNameText"
+                                       FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock x:Name="ItemDetailText"
+                                       Margin="0,4,0,0"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock x:Name="MultiItemText"
+                               FontSize="{x:Static SystemFonts.MessageFontSize}"
+                               Foreground="{DynamicResource CjTextPrimaryBrush}"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed" />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <StackPanel Grid.Row="3"
+                    Margin="24,18,24,20"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal">
+            <ui:Button x:Name="YesButton"
+                       MinWidth="88"
+                       Style="{StaticResource CjSecondaryButtonStyle}"
+                       Click="OnYesClick"
+                       Content="是" />
+            <ui:Button x:Name="NoButton"
+                       MinWidth="88"
+                       Margin="8,0,0,0"
+                       Style="{StaticResource CjPrimaryButtonStyle}"
+                       Click="OnNoClick"
+                       Content="否"
+                       IsDefault="True" />
+        </StackPanel>
+    </Grid>
+</ui:FluentWindow>

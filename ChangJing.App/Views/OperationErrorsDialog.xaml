@@ -1,0 +1,122 @@
+<ui:FluentWindow x:Class="ChangJing.App.Views.OperationErrorsDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="操作完成，部分项目未成功"
+                 Width="720"
+                 Height="440"
+                 MinWidth="560"
+                 MinHeight="320"
+                 ShowInTaskbar="False"
+                 Background="{DynamicResource CjCardBackgroundBrush}"
+                 WindowBackdropType="None"
+                 WindowStartupLocation="CenterOwner"
+                 ExtendsContentIntoTitleBar="True">
+    <Grid Background="{DynamicResource CjCardBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0"
+                     Title="操作完成，部分项目未成功"
+                     Background="{DynamicResource CjCardBackgroundBrush}"
+                     ShowHelp="False"
+                     ShowMinimize="False"
+                     ShowMaximize="False"
+                     ShowClose="True" />
+
+        <TextBlock x:Name="SummaryText"
+                   Grid.Row="1"
+                   Margin="20,10,20,8"
+                   FontSize="{x:Static SystemFonts.MessageFontSize}"
+                   TextWrapping="Wrap" />
+
+        <ListView x:Name="ErrorList"
+                  Grid.Row="2"
+                  Margin="20,0,20,0"
+                  BorderBrush="{DynamicResource CjCardBorderBrush}"
+                  BorderThickness="1"
+                  SelectionMode="Single"
+                  ItemContainerStyle="{StaticResource CjPlainListRowStyle}"
+                  AutomationProperties.Name="失败项列表">
+            <ListView.View>
+                <GridView ColumnHeaderContainerStyle="{StaticResource FileListHeaderStyle}">
+                    <GridViewColumn Header="名称" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{Binding Name}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding DisplayPath}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="原因" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{Binding ReasonDisplay}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding Reason}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="完整路径" Width="280">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{Binding DisplayPath}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding DisplayPath}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <ui:MenuItem Header="复制路径" Click="OnCopyPathClick" />
+                </ContextMenu>
+            </ListView.ContextMenu>
+        </ListView>
+
+        <Grid Grid.Row="3" Margin="20,12,20,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <ui:Button Style="{StaticResource CjSecondaryButtonStyle}"
+                           Click="OnCopyPathClick"
+                           Content="复制路径"
+                           Icon="{ui:SymbolIcon Copy20}" />
+                <ui:Button x:Name="ElevationButton"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Click="OnElevationClick"
+                           Content="以管理员身份重新打开"
+                           Icon="{ui:SymbolIcon ShieldTask20}"
+                           Visibility="Collapsed"
+                           ToolTip="其中一些项目需要管理员权限"
+                           AutomationProperties.Name="以管理员身份重新打开" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ui:Button x:Name="RetryButton"
+                           MinWidth="110"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Click="OnRetryClick"
+                           Content="重试失败项" />
+                <ui:Button MinWidth="88"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjPrimaryButtonStyle}"
+                           Click="OnCloseClick"
+                           Content="关闭" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

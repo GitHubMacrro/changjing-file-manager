@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>畅径 使用手册</title>
+<style>
+  :root { --fg:#1f2328; --muted:#57606a; --line:#d0d7de; --accent:#0969da; --code-bg:#f6f8fa; --note-bg:#f6f8fa; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1.25rem 4rem;
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", system-ui, sans-serif;
+    color: var(--fg); background:#fff; line-height: 1.75; font-size: 16px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 1.9rem; margin: 0 0 .6rem; }
+  h2 { font-size: 1.3rem; margin: 2.2rem 0 .6rem; padding-bottom: .3rem; border-bottom: 2px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 1.3rem 0 .4rem; }
+  p, li { margin: .5rem 0; }
+  code, kbd {
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 4px; padding: .1em .35em; font-size: .9em;
+  }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: .8rem 1rem; overflow: auto; }
+  pre code { background: none; border: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: .8rem 0; font-size: .95rem; }
+  th, td { border: 1px solid var(--line); padding: .45rem .7rem; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); white-space: nowrap; }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  ul, ol { padding-left: 1.4rem; }
+  blockquote { margin: 1rem 0; padding: .6rem 1rem; border-left: 4px solid var(--accent); background: var(--note-bg); border-radius: 4px; }
+  blockquote p { margin: 0; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 2rem 0; }
+  @media print {
+    body { padding: 0; font-size: 11pt; }
+    .wrap { max-width: 100%; }
+    h2 { break-after: avoid; }
+    table, blockquote, pre { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>畅径 使用手册</h1>
+<p>版本 1.0.0 · 适用系统：Windows 10 或更高版本</p>
+<hr>
+<h2>一、畅径是什么</h2>
+<p>畅径是一个 Windows 文件管理器，用来处理资源管理器处理不了的文件。</p>
+<p>Windows 资源管理器对「很长的路径」和「特殊名字」支持不好。当文件放在很深的文件夹里（完整路径超过 260 个字符），或者名字是 <code>con</code>、<code>nul</code> 这类系统保留字，或者名字以点 <code>.</code>、空格结尾时，资源管理器可能会：</p>
+<ul>
+<li>打不开、复制失败、删不掉、移不动</li>
+<li>报「找不到文件」「路径太长」「文件名无效」之类的含糊错误</li>
+<li>甚至整个文件夹都进不去</li>
+</ul>
+<p>畅径可以直接浏览、复制、移动、重命名、删除这些文件，还提供了一个「修复路径」工具，把它们改成资源管理器也能正常用的名字。修好之后，你就能继续用熟悉的资源管理器了。</p>
+<p>畅径<strong>完全在本地运行，不联网，不收集任何数据</strong>。</p>
+<hr>
+<h2>二、界面介绍</h2>
+<p>主窗口从上到下分成几块：</p>
+<ul>
+<li><strong>标题栏</strong>：显示「畅径 - 位置」。以管理员身份运行时显示「畅径（管理员） - 位置」，并在图标旁带一个小盾牌</li>
+<li><strong>工具栏第一行</strong>：左边是后退 / 前进 / 上一级 / 主页按钮，中间是地址栏，右边是刷新、搜索框、搜索按钮、搜索历史</li>
+<li><strong>工具栏第二行</strong>：新建、剪切、复制、粘贴、重命名、删除、复制到…、移动到…、修复路径…、排序、查看，最右侧是「预览窗格」开关和「设置」按钮</li>
+<li><strong>主体区域</strong>：左边是导航树（快速访问、此电脑、回收站），中间是文件列表，右边是预览窗格（默认关闭）</li>
+<li><strong>状态栏</strong>：显示当前项目数量，以及右下角的图标缩放和视图切换按钮</li>
+</ul>
+<p>「设置」按钮在<strong>所有页面</strong>都显示（包括回收站、搜索结果和此电脑），点一下就能打开选项窗口。</p>
+<p>「修复路径…」按钮只在<strong>能用的页面</strong>显示，也就是打开某个文件夹时（以及搜索结果里）。在「此电脑」和「回收站」页面不会出现。</p>
+<hr>
+<h2>三、浏览与地址栏</h2>
+<h3>打开位置</h3>
+<ul>
+<li>双击文件夹进入，双击文件用默认程序打开；选中后按 <kbd>Enter</kbd> 也可以</li>
+<li>左侧导航树点「快速访问」「此电脑」「回收站」可直接跳转</li>
+<li>双击「此电脑」页面里的驱动器和常用文件夹可以进入</li>
+</ul>
+<h3>地址栏</h3>
+<ul>
+<li>地址栏是一格一格的「面包屑」，点某一格跳到那一层</li>
+<li>每一格后面有个小箭头 <code>›</code>，点它会列出该层的子文件夹，可以直接跳过去</li>
+<li>想直接输入路径：点地址栏空白处，或按 <kbd>Ctrl+L</kbd> / <kbd>Alt+D</kbd> / <kbd>F4</kbd>，然后粘贴或输入完整路径回车</li>
+<li><strong>粘贴长路径</strong>：直接把完整路径（可以是超过 260 字符的路径，也可以带 <code>\\?\</code> 前缀）粘进地址栏回车即可，畅径会自动处理</li>
+<li>地址栏只显示正常路径，<strong>从不显示</strong> <code>\\?\</code> 这类内部前缀；把鼠标停在地址栏上能看到完整路径</li>
+</ul>
+<hr>
+<h2>四、常用文件操作</h2>
+<table><thead><tr>
+<th>你想做什么</th>
+<th>怎么做</th>
+</tr></thead><tbody>
+<tr>
+<td>打开文件 / 进入文件夹</td>
+<td>双击，或选中后按 <kbd>Enter</kbd></td>
+</tr>
+<tr>
+<td>后退 / 前进 / 上一级</td>
+<td>工具栏按钮，或 <kbd>Alt+←</kbd> / <kbd>Alt+→</kbd> / <kbd>Alt+↑</kbd></td>
+</tr>
+<tr>
+<td>刷新</td>
+<td><kbd>F5</kbd> 或 <kbd>Ctrl+R</kbd></td>
+</tr>
+<tr>
+<td>重命名</td>
+<td>选中按 <kbd>F2</kbd>，改完按 <kbd>Enter</kbd></td>
+</tr>
+<tr>
+<td>新建文件夹</td>
+<td><kbd>Ctrl+Shift+N</kbd></td>
+</tr>
+<tr>
+<td>删除（进畅径回收站）</td>
+<td><kbd>Delete</kbd></td>
+</tr>
+<tr>
+<td>永久删除（不进回收站）</td>
+<td><kbd>Shift+Delete</kbd>（会先确认）</td>
+</tr>
+<tr>
+<td>撤销 / 重做</td>
+<td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td>
+</tr>
+</tbody></table>
+<h3>新建</h3>
+<p>工具栏「新建」按钮或列表空白处右键「新建」，可以新建文件夹、快捷方式，也可以新建系统里注册过的文件类型（如文本文档、位图图像）。菜单里的内容跟随系统。</p>
+<h3>复制 / 剪切 / 粘贴</h3>
+<p>选中若干项，<kbd>Ctrl+C</kbd> 后在目标文件夹 <kbd>Ctrl+V</kbd>；或者 <kbd>Ctrl+X</kbd> 剪切后再粘贴。剪切的项会显示半透明。</p>
+<h3>复制到… / 移动到…</h3>
+<p>选中项后点工具栏「复制到…」或「移动到…」，会弹出一个目标选择器，里面有最近用过位置、常用位置和各磁盘。选好后即可复制或移动过去。</p>
+<h3>重命名</h3>
+<p>选中按 <kbd>F2</kbd> 直接改名；若名字非法（含系统保留字、以点结尾等），输入框下方会给出提示。</p>
+<h3>删除</h3>
+<ul>
+<li>按 <kbd>Delete</kbd>：文件进入畅径回收站，底部出现提示条「已将 N 个项目移到回收站 [撤销]」，5 秒后消失。点「撤销」可立即还原</li>
+<li>按 <kbd>Shift+Delete</kbd>：永久删除，会先弹确认框（默认按钮「否」）</li>
+</ul>
+<h3>撤销 / 重做</h3>
+<p>复制、移动、重命名、删除等操作都可以撤销。<kbd>Ctrl+Z</kbd> 撤销，<kbd>Ctrl+Y</kbd> 重做。撤销历史只在本次运行内有效，关闭程序后清空。永久删除不会进入撤销栈。</p>
+<hr>
+<h2>五、拖放</h2>
+<ul>
+<li>把文件拖到文件夹、导航树节点、或「此电脑」里的驱动器上即可</li>
+<li>同一磁盘内拖动默认是<strong>移动</strong>，跨磁盘默认是<strong>复制</strong></li>
+<li>按住 <kbd>Ctrl</kbd> = 复制，<kbd>Shift</kbd> = 移动，<kbd>Alt</kbd> = 创建快捷方式</li>
+<li>拖到自身或自己的子文件夹会被禁止（显示禁止光标）</li>
+<li>把文件拖出到其它程序（如桌面）<strong>只会复制</strong>，绝不会移动或删除源文件</li>
+</ul>
+<hr>
+<h2>六、搜索</h2>
+<ul>
+<li><strong>当前文件夹即时筛选</strong>：在搜索框输入关键词，列表即时过滤，不进入子文件夹</li>
+<li><strong>递归搜索子文件夹</strong>：输入关键词后按 <kbd>Enter</kbd>，或在搜索框右侧点「在子文件夹中搜索」按钮，畅径会扫描当前文件夹及其所有子文件夹</li>
+<li>搜索结果用单独的列表显示，会多出一列「所在文件夹」，命中的关键词会高亮显示</li>
+<li>搜索过程中可以点「暂停搜索」暂停，点「取消搜索」或按 <kbd>Esc</kbd> 退出</li>
+<li>搜索框右侧的「搜索历史」按钮可以查看最近搜索过的关键词，也可以清除历史</li>
+</ul>
+<hr>
+<h2>七、预览窗格</h2>
+<p>按 <kbd>Alt+P</kbd> 或点工具栏最右侧的「预览窗格」开关。</p>
+<ul>
+<li>选中一个文件时，右侧显示预览：图片、文本、PDF 会直接渲染；其它类型会尝试调用系统的预览处理器（如果系统装了）</li>
+<li>选中多个文件时显示「已选择多项」</li>
+<li>预览是只读的，不会锁定文件，你在别处仍可修改或删除它</li>
+<li>预览 PDF、文本等会在临时目录生成副本，关闭程序时会自动清理</li>
+</ul>
+<hr>
+<h2>八、视图与排序</h2>
+<p>点工具栏「查看」或「排序」，也可以在列表空白处右键选择。视图有 8 种：</p>
+<table><thead><tr>
+<th>快捷键</th>
+<th>视图</th>
+</tr></thead><tbody>
+<tr>
+<td><kbd>Ctrl+Shift+1</kbd></td>
+<td>超大图标</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+2</kbd></td>
+<td>大图标</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+3</kbd></td>
+<td>中等图标</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+4</kbd></td>
+<td>小图标</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+5</kbd></td>
+<td>列表</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+6</kbd></td>
+<td>详细信息</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+7</kbd></td>
+<td>平铺</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+8</kbd></td>
+<td>内容</td>
+</tr>
+</tbody></table>
+<ul>
+<li>用 <kbd>Ctrl+滚轮</kbd>，或状态栏右下角的缩放滑块 / 加减按钮，可以调整图标大小（16～256）</li>
+<li>「查看」菜单里还有「紧凑模式」，让详细信息行更紧凑</li>
+<li>排序可以按名称、修改日期、类型、大小、所在文件夹，可分别选升序或降序</li>
+<li>可以按名称、修改日期、类型、大小、所在文件夹分组显示</li>
+<li>每个文件夹的视图和排序会被记住，下次打开同一个文件夹还是上次的样子</li>
+</ul>
+<hr>
+<h2>九、回收站</h2>
+<p>畅径有自己独立的回收站（不占用系统回收站），位于每个磁盘根目录下的隐藏文件夹 <code>X:\$ChangJing.Recycle</code>，只有当前用户和系统账户能访问。</p>
+<ul>
+<li>左侧导航点「回收站」进入回收站页面</li>
+<li>页面列出所有已删除项目：名称、原位置、删除日期、大小、类型</li>
+<li><strong>还原</strong>：选中后点「还原选定的项目」。若原文件夹已被删除，畅径会自动重建；若目标位置已有同名项目，会弹出冲突对话框（替换 / 跳过 / 保留两者）</li>
+<li><strong>永久删除</strong>：选中后点「永久删除」，会先确认，删除后不可恢复</li>
+<li><strong>清空回收站</strong>：点「清空回收站」，会先确认，删除后不可恢复</li>
+<li>回收站有容量上限（默认各卷容量的 10%，可在「设置 → 选项」里改成固定大小），超出时会自动清理最早删除的项目</li>
+<li><strong>U 盘 / 网络盘 / 光盘</strong>上的文件删除时不进回收站，会提示将被永久删除</li>
+</ul>
+<blockquote><p>卸载畅径时，畅径回收站里的文件<strong>不会被删除</strong>，仍保留在各磁盘的 <code>$ChangJing.Recycle</code> 文件夹里。</p></blockquote>
+<hr>
+<h2>十、修复路径工具</h2>
+<p>这是畅径的核心功能。当你看到列表里某个文件的名称后面有个橙色的「超长」小标签，或某个文件在资源管理器里打不开时，就可以用它。</p>
+<h3>打开方式</h3>
+<ol>
+<li>选中一个或多个问题项，右键 →「修复路径…」</li>
+<li>点工具栏的「修复路径…」按钮：有选中项时分析选中项，没有选中项时<strong>扫描当前文件夹</strong>并列出所有问题项</li>
+<li>预览窗格里选中问题项后，点提示卡上的「修复…」按钮</li>
+</ol>
+<h3>它能修什么</h3>
+<ul>
+<li><strong>路径过长</strong>：完整路径超过 260 个字符，导致资源管理器打不开</li>
+<li><strong>系统保留名</strong>：名字是 <code>CON</code>、<code>PRN</code>、<code>AUX</code>、<code>NUL</code>、<code>COM1</code>～<code>COM9</code>、<code>LPT1</code>～<code>LPT9</code> 等</li>
+<li><strong>以点或空格结尾</strong>：如 <code>readme.</code>、<code>readme </code></li>
+</ul>
+<h3>对话框里能做什么</h3>
+<ul>
+<li>列表会列出每个问题项、问题类型、当前长度和「建议新名称」</li>
+<li>「建议新名称」可以直接编辑，如果仍然非法会标红提示</li>
+<li>修复方式有两种：</li>
+<li><strong>重命名修复</strong>（默认）：就地改名，让路径变短、名字变合法。超长文件会在文件名中间插入省略号 <code>…</code> 并保留扩展名</li>
+<li><strong>移动到较短位置</strong>：把文件移动到一个更短的文件夹（默认「桌面\畅径修复」，可以改）</li>
+<li>如果上级文件夹本身也太长，可以勾选「缩短所在文件夹名」，一并把上级文件夹改名变短</li>
+<li>点「开始修复」，完成后显示「已修复 N 项，现在可以在资源管理器中打开」，并提供「打开所在文件夹」按钮</li>
+<li>整批修复算<strong>一步</strong>，按 <kbd>Ctrl+Z</kbd> 可一次性全部还原，<kbd>Ctrl+Y</kbd> 重做</li>
+</ul>
+<h3>失败了怎么办</h3>
+<p>如果某个项目未能修复（例如目标新名称已被占用、文件被其它程序占用、没有权限），对话框会列出失败的项目和原因。你可以：</p>
+<ul>
+<li>换一个「建议新名称」再试</li>
+<li>先关闭占用文件的程序</li>
+<li>如果是权限问题，用「以管理员身份重新打开」后再试</li>
+</ul>
+<p>修复只改<strong>名称</strong>或<strong>位置</strong>，不改文件内容，时间戳也会保留。</p>
+<hr>
+<h2>十一、以管理员身份重新打开</h2>
+<p>畅径默认以普通权限运行。当你对需要管理员权限的文件夹（如 <code>C:\Program Files</code> 下的某些项）执行新建、重命名、粘贴、删除等操作时，会弹出「需要管理员权限」提示框，提供三个选择：</p>
+<ul>
+<li><strong>以管理员身份重新打开</strong>：新开一个畅径窗口（标题栏显示「畅径（管理员） - 位置」并带小盾牌），定位到该文件夹；当前窗口不会关闭，正在进行的任务不会丢失。系统会弹出 UAC，点「是」即可；点「否」则静默返回，不报错</li>
+<li><strong>跳过</strong>：放弃这一次操作，不报错</li>
+<li><strong>取消</strong>：取消整个操作</li>
+</ul>
+<p>如果你已经用「以管理员身份运行」启动了畅径，标题栏会显示「畅径（管理员）」，提示框里也不会再出现提权按钮。</p>
+<hr>
+<h2>十二、右键「用畅径打开」</h2>
+<p>安装时如果勾选了「添加右键菜单『用畅径打开』」，那么在文件夹、文件夹空白处、驱动器、文件上右键，都能看到「用畅径打开」：</p>
+<ul>
+<li>对文件夹 / 空白处右键：用畅径打开该文件夹</li>
+<li>对驱动器右键：用畅径打开该磁盘根目录</li>
+<li>对文件右键：用畅径打开它所在的文件夹，并选中该文件</li>
+</ul>
+<p>Windows 11 上要先点右键菜单里的「显示更多选项」，才能看到「用畅径打开」。</p>
+<hr>
+<h2>十三、命令行用法</h2>
+<p>畅径接受一个位置参数：</p>
+<pre><code>
+ChangJing.exe &quot;C:\某个文件夹&quot;
+ChangJing.exe &quot;C:\某个文件夹\某个文件.txt&quot;
+</code></pre>
+<ul>
+<li>参数是文件夹 → 打开该文件夹</li>
+<li>参数是文件 → 打开它所在的文件夹并选中它</li>
+<li>参数可以是普通路径、长路径、UNC 路径，也可以带 <code>\\?\</code> 前缀</li>
+<li>参数不存在时，会在默认位置（此电脑）打开，并提示「找不到路径」</li>
+</ul>
+<hr>
+<h2>十四、设置</h2>
+<p>点工具栏最右侧的「设置」按钮打开选项窗口。窗口分成「选项」和「关于」两个分页。</p>
+<h3>选项分页</h3>
+<ul>
+<li><strong>外观 - 主题</strong>：跟随系统 / 浅色 / 深色，保存后立即生效</li>
+<li><strong>回收站容量</strong>：可选「卷容量百分比」（默认 10%，0 表示不限制）或「固定大小」（GB）。超出上限时自动清理最早删除的项目</li>
+<li><strong>删除</strong>：勾选「删除时不进回收站，直接永久删除」后，普通的 <kbd>Delete</kbd> 也会永久删除（每次仍会确认）</li>
+</ul>
+<h3>关于分页</h3>
+<ul>
+<li>显示应用图标、名称和版本号，例如「版本 1.0.0（64 位）」，32 位版显示「32 位」</li>
+<li>一句话说明：处理资源管理器打不开、删不掉的长路径文件</li>
+<li>隐私说明：完全本地运行，不联网，不收集任何数据</li>
+<li>版权行和「以 MIT 许可证开源」</li>
+<li>按钮：</li>
+<li><strong>项目主页</strong>：打开项目主页</li>
+<li><strong>反馈问题</strong>：打开问题反馈页</li>
+<li><strong>查看许可证</strong>：打开安装目录里的许可文件（<code>LICENSE.txt</code> 或 <code>licenses\</code>；找不到时打开 GitHub 上的许可证）</li>
+<li><strong>打开日志文件夹</strong>：打开日志所在文件夹</li>
+<li><strong>复制版本信息</strong>：把版本、位数和 Windows 版本号复制到剪贴板，复制后按钮旁提示「已复制」</li>
+</ul>
+<p>程序不会自动联网，只有你点上面这些按钮时，才会用默认浏览器或默认程序打开对应内容。</p>
+<hr>
+<h2>十五、快捷键表</h2>
+<table><thead><tr>
+<th>快捷键</th>
+<th>作用</th>
+</tr></thead><tbody>
+<tr>
+<td><kbd>Enter</kbd></td>
+<td>打开选中的文件 / 进入文件夹</td>
+</tr>
+<tr>
+<td><kbd>Backspace</kbd></td>
+<td>后退</td>
+</tr>
+<tr>
+<td><kbd>Alt+←</kbd> / <kbd>Alt+→</kbd></td>
+<td>后退 / 前进</td>
+</tr>
+<tr>
+<td><kbd>Alt+↑</kbd></td>
+<td>上一级</td>
+</tr>
+<tr>
+<td><kbd>F4</kbd> / <kbd>Alt+D</kbd> / <kbd>Ctrl+L</kbd></td>
+<td>聚焦地址栏（可输入完整路径）</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+F</kbd> / <kbd>Ctrl+E</kbd> / <kbd>F3</kbd></td>
+<td>聚焦搜索框</td>
+</tr>
+<tr>
+<td><kbd>F5</kbd> / <kbd>Ctrl+R</kbd></td>
+<td>刷新</td>
+</tr>
+<tr>
+<td><kbd>F2</kbd></td>
+<td>重命名</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+N</kbd></td>
+<td>新建文件夹</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+C</kbd> / <kbd>Ctrl+X</kbd> / <kbd>Ctrl+V</kbd></td>
+<td>复制 / 剪切 / 粘贴</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+C</kbd></td>
+<td>复制选中项的完整路径</td>
+</tr>
+<tr>
+<td><kbd>Delete</kbd></td>
+<td>删除到回收站</td>
+</tr>
+<tr>
+<td><kbd>Shift+Delete</kbd></td>
+<td>永久删除（需确认）</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td>
+<td>撤销 / 重做</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+A</kbd></td>
+<td>全选</td>
+</tr>
+<tr>
+<td><kbd>Alt+Enter</kbd></td>
+<td>属性</td>
+</tr>
+<tr>
+<td><kbd>Alt+P</kbd></td>
+<td>打开 / 关闭预览窗格</td>
+</tr>
+<tr>
+<td><kbd>Shift+F10</kbd> 或菜单键</td>
+<td>打开右键菜单</td>
+</tr>
+<tr>
+<td><kbd>Esc</kbd></td>
+<td>取消搜索 / 关闭当前下拉</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Shift+1</kbd> ~ <kbd>Ctrl+Shift+8</kbd></td>
+<td>切换 8 种视图</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+滚轮</kbd></td>
+<td>放大 / 缩小图标</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>十六、常见问题</h2>
+<p><strong>Q：畅径会不会修改我的文件内容？</strong></p>
+<p>不会。畅径只做浏览、复制、移动、重命名、删除这类操作，从不修改文件内容。</p>
+<p><strong>Q：为什么有些文件删不掉？</strong></p>
+<p>文件可能正被其它程序占用。畅径会提示占用它的程序名，请先关闭该程序再试。若是权限问题，会弹出管理员权限提示框。</p>
+<p><strong>Q：修复路径改了名字，会不会影响文件内容？</strong></p>
+<p>不会。修复只改名称或位置，内容、时间戳都保留。改错了按 <kbd>Ctrl+Z</kbd> 可以整批还原。</p>
+<p><strong>Q：预览会锁定文件吗？</strong></p>
+<p>不会。预览打开的是只读流，随时可以在其它程序里修改或删除该文件。</p>
+<p><strong>Q：畅径的回收站和系统回收站是一回事吗？</strong></p>
+<p>不是。畅径有自己独立的回收站，用畅径删除的文件只能从畅径的「回收站」页面还原。</p>
+<p><strong>Q：撤销能持续多久？</strong></p>
+<p>撤销历史只在本次运行内有效，关闭程序后清空。永久删除不进撤销栈。</p>
+<p><strong>Q：设置和日志在哪里？</strong></p>
+<ul>
+<li>设置：<code>%LOCALAPPDATA%\ChangJing\settings.json</code></li>
+<li>日志：<code>%LOCALAPPDATA%\ChangJing\logs</code> 文件夹里的日志文件（需要反馈问题时请一并提供）</li>
+</ul>
+<p><strong>Q：怎么切换浅色 / 深色？</strong></p>
+<p>点工具栏最右侧的「设置」，在「选项 → 外观」里选「跟随系统 / 浅色 / 深色」。</p>
+<p><strong>Q：畅径会联网吗？</strong></p>
+<p>不会。畅径完全在本地运行，不联网，不收集任何数据。只有在「设置 → 关于」页主动点「项目主页」「反馈问题」这类按钮时，才会用默认浏览器打开对应链接。</p>
+<hr>
+<h2>十七、反馈问题</h2>
+<p>遇到问题时，请记录：</p>
+<ol>
+<li>你做了什么操作</li>
+<li>实际看到什么（可以截图）</li>
+<li>期望看到什么</li>
+</ol>
+<p>并附上：</p>
+<ul>
+<li>「设置 → 关于 → 复制版本信息」复制出来的版本信息</li>
+<li>日志文件夹 <code>%LOCALAPPDATA%\ChangJing\logs</code> 里的日志文件</li>
+</ul>
+<p>把这些发到项目的问题反馈页，能帮助我们定位问题。</p>
+<hr>
+<h2>十八、卸载</h2>
+<p>卸载路径：</p>
+<ul>
+<li>Windows 10：「设置 → 应用 → 应用和功能」</li>
+<li>Windows 11：「设置 → 应用 → 已安装的应用」</li>
+</ul>
+<p>在列表里找到「畅径」点卸载即可。</p>
+<ul>
+<li>卸载时会提示畅径回收站里还有多少个已删除项目，这些文件<strong>不会被删除</strong>，仍保留在各磁盘的 <code>$ChangJing.Recycle</code> 文件夹里</li>
+<li>卸载时会询问是否同时删除设置和日志（默认「否」）。选择「是」会删除 <code>%LOCALAPPDATA%\ChangJing</code> 下的设置、日志与临时数据；选择「否」则保留，重装后可以继续使用</li>
+<li>绿色版（便携版）直接删除程序文件夹即可，但同样不会删除畅径回收站里的文件</li>
+</ul>
+
+</div>
+</body>
+</html>
