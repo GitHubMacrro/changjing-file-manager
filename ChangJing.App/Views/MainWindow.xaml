@@ -1,0 +1,1661 @@
+<ui:FluentWindow x:Class="ChangJing.App.Views.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:wua="clr-namespace:Wpf.Ui.Appearance;assembly=Wpf.Ui"
+                 xmlns:controls="clr-namespace:ChangJing.App.Controls"
+                 xmlns:vm="clr-namespace:ChangJing.App.ViewModels"
+                 mc:Ignorable="d"
+                 d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+                 Title="{Binding WindowTitle}"
+                 Width="1100"
+                 Height="700"
+                 MinWidth="960"
+                 MinHeight="600"
+                 FontFamily="{x:Static SystemFonts.MessageFontFamily}"
+                 FontSize="{x:Static SystemFonts.MessageFontSize}"
+                 Foreground="{DynamicResource CjTextPrimaryBrush}"
+                 Background="{DynamicResource CjWindowBackgroundBrush}"
+                 UseLayoutRounding="True"
+                 SnapsToDevicePixels="True"
+                 WindowStartupLocation="CenterScreen"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 WindowCornerPreference="Round"
+                 PreviewKeyDown="OnWindowPreviewKeyDown">
+
+    <ui:FluentWindow.Resources>
+        <Style x:Key="CellSecondaryTextStyle" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+        </Style>
+
+        <Style x:Key="TileNameTextStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="LineHeight" Value="16" />
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+        </Style>
+
+        <DataTemplate x:Key="NameCellTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <Grid ToolTip="{Binding ToolTipText}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0"
+                       Width="16"
+                       Height="16"
+                       Margin="0,0,8,0"
+                       VerticalAlignment="Center"
+                       controls:ListHitTest.IsNameContent="True"
+                       Source="{Binding Icon}" />
+
+                <controls:MiddleEllipsisTextBlock Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                                  Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                                  Text="{Binding Name}"
+                                                  HighlightKeyword="{Binding DataContext.SearchHighlightKeyword, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  HighlightBackground="{DynamicResource CjSearchHighlightBrush}"
+                                                  controls:ListHitTest.IsNameContent="True"
+                                                  Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibility}}" />
+
+                <Grid Grid.Column="1"
+                      VerticalAlignment="Center"
+                      controls:ListHitTest.IsNameContent="True"
+                      Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibility}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="RenameEditor"
+                             Grid.Column="0"
+                             MinWidth="120"
+                             Padding="4,1"
+                             VerticalContentAlignment="Center"
+                             FontSize="{x:Static SystemFonts.MessageFontSize}"
+                             controls:ListHitTest.IsNameContent="True"
+                             Text="{Binding EditingName, UpdateSourceTrigger=PropertyChanged}"
+                             TextChanged="OnRenameEditorTextChanged"
+                             KeyDown="OnRenameEditorKeyDown"
+                             LostKeyboardFocus="OnRenameEditorLostFocus"
+                             IsVisibleChanged="OnRenameEditorIsVisibleChanged"
+                             AutomationProperties.AutomationId="RenameEditor"
+                             AutomationProperties.Name="重命名输入框" />
+                    <TextBlock Grid.Column="1"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Text="{Binding RenameMessage}"
+                               TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding RenameMessage}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource CjTextSecondaryBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRenameMessageError}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource CjDangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+
+                <Border Grid.Column="2"
+                        Style="{StaticResource LongPathBadgeStyle}"
+                        ToolTip="{Binding BadgeToolTip}"
+                        Visibility="{Binding HasBadge, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock FontSize="11"
+                               Foreground="{DynamicResource CjBadgeForegroundBrush}"
+                               Text="超长" />
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DateCellTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <TextBlock Style="{StaticResource CellSecondaryTextStyle}" Text="{Binding LastWriteTimeText}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="TypeCellTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <TextBlock Style="{StaticResource CellSecondaryTextStyle}"
+                       Text="{Binding TypeName}"
+                       TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="SizeCellTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <TextBlock Style="{StaticResource CellSecondaryTextStyle}"
+                       HorizontalAlignment="Right"
+                       Text="{Binding SizeText}"
+                       TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="SearchFolderCellTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <controls:MiddleEllipsisTextBlock VerticalAlignment="Center"
+                                              FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                              Text="{Binding SearchFolderPath}"
+                                              KeepLastSegment="True"
+                                              ToolTip="{Binding SearchFolderPath}"
+                                              Foreground="{DynamicResource CjTextSecondaryBrush}" />
+        </DataTemplate>
+
+        <Style x:Key="ThisPcDriveProgressStyle" TargetType="ProgressBar">
+            <Setter Property="Width" Value="180" />
+            <Setter Property="Height" Value="14" />
+            <Setter Property="Minimum" Value="0" />
+            <Setter Property="Maximum" Value="100" />
+            <Setter Property="Background" Value="{DynamicResource CjDriveProgressTrackBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource CjDriveProgressBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="2" />
+                            <Border x:Name="PART_Track" />
+                            <Border x:Name="PART_Indicator"
+                                    HorizontalAlignment="Left"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="2" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLowSpace}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource CjDriveProgressLowBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ThisPcGroupHeaderToggleStyle" TargetType="ToggleButton">            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ThisPcTileBorderStyle" TargetType="Border">
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="{StaticResource CjInputCornerRadius}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ThisPcTileItemStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="{StaticResource CjInputCornerRadius}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="3" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Rectangle x:Name="AccentBar"
+                                           Grid.Column="0"
+                                           Width="3"
+                                           RadiusX="1.5"
+                                           RadiusY="1.5"
+                                           Margin="0,4"
+                                           VerticalAlignment="Stretch"
+                                           Fill="{DynamicResource CjAccentBrush}"
+                                           Visibility="Collapsed" />
+                                <ContentPresenter Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                                <Setter TargetName="AccentBar" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="ThisPcFolderItemTemplate" DataType="{x:Type vm:ThisPcFolderViewModel}">
+            <Border Width="230"
+                    Height="60"
+                    Style="{StaticResource ThisPcTileBorderStyle}"
+                    AutomationProperties.Name="{Binding Name}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Image Grid.Column="0"
+                           Width="48"
+                           Height="48"
+                           Margin="0,0,10,0"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           Source="{Binding Icon}" />
+                    <TextBlock Grid.Column="1"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource CjTextPrimaryBrush}"
+                               Text="{Binding Name}"
+                               TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding DisplayPath}" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ThisPcDriveItemTemplate" DataType="{x:Type vm:ThisPcDriveViewModel}">
+            <Border Width="340"
+                    Height="66"
+                    Style="{StaticResource ThisPcTileBorderStyle}"
+                    AutomationProperties.Name="{Binding DisplayName}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Image Grid.Column="0"
+                           Width="48"
+                           Height="48"
+                           Margin="0,0,10,0"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           Source="{Binding Icon}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                   Text="{Binding DisplayName}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <StackPanel Visibility="{Binding HasSizeInfo, Converter={StaticResource BoolToVisibility}}">
+                            <ProgressBar Margin="0,4,0,2"
+                                         HorizontalAlignment="Left"
+                                         Style="{StaticResource ThisPcDriveProgressStyle}"
+                                         Value="{Binding ProgressPercent, Mode=OneWay}" />
+                            <TextBlock FontSize="12"
+                                       Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                       Text="{Binding CapacityText}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="RecycleBinNameCellTemplate" DataType="{x:Type vm:RecycleBinItemViewModel}">
+            <Grid ToolTip="{Binding ToolTipText}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0"
+                       Width="16"
+                       Height="16"
+                       Margin="0,0,8,0"
+                       VerticalAlignment="Center"
+                       Source="{Binding Icon}" />
+                <controls:MiddleEllipsisTextBlock Grid.Column="1"
+                                                  VerticalAlignment="Center"
+                                                  FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                                  Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                                  Text="{Binding Name}" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="RecycleBinOriginalCellTemplate" DataType="{x:Type vm:RecycleBinItemViewModel}">
+            <TextBlock Style="{StaticResource CellSecondaryTextStyle}"
+                       Text="{Binding OriginalPath}"
+                       TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding OriginalPath}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="RecycleBinDeletedCellTemplate" DataType="{x:Type vm:RecycleBinItemViewModel}">
+            <TextBlock Style="{StaticResource CellSecondaryTextStyle}" Text="{Binding DeletedText}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="RecycleBinSizeCellTemplate" DataType="{x:Type vm:RecycleBinItemViewModel}">
+            <TextBlock Style="{StaticResource CellSecondaryTextStyle}"
+                       HorizontalAlignment="Right"
+                       Text="{Binding SizeText}"
+                       TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding SizeText}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="RecycleBinTypeCellTemplate" DataType="{x:Type vm:RecycleBinItemViewModel}">
+            <TextBlock Style="{StaticResource CellSecondaryTextStyle}"
+                       Text="{Binding TypeName}"
+                       TextTrimming="CharacterEllipsis" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="IconTileTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <Grid Width="{Binding DataContext.ItemContentWidth, RelativeSource={RelativeSource AncestorType=ListView}}"
+                  Margin="6,4" ToolTip="{Binding ToolTipText}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <controls:ThumbnailImage Width="{Binding DataContext.TileImageSize, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                             Height="{Binding DataContext.TileImageSize, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"
+                                             Stretch="Uniform"
+                                             RenderOptions.BitmapScalingMode="HighQuality"
+                                             FilePath="{Binding DisplayPath}"
+                                             LongPath="{Binding LongPath}"
+                                             IconSize="{Binding DataContext.TileImageSize, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                             FallbackIconSource="{Binding}"
+                                             UseThumbnail="{Binding IsImage}" />
+
+                    <Border Style="{StaticResource LongPathBadgeStyle}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0"
+                            ToolTip="{Binding BadgeToolTip}"
+                            Visibility="{Binding HasBadge, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock FontSize="10"
+                                   Foreground="{DynamicResource CjBadgeForegroundBrush}"
+                                   Text="超长" />
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,4,0,0">
+                    <!-- 用固定 Height 而非 MaxHeight，否则文本测量时变高、渲染时被硬裁 -->
+                    <TextBlock Style="{StaticResource TileNameTextStyle}"
+                               FontSize="{Binding DataContext.TileNameFontSize, RelativeSource={RelativeSource AncestorType=ListView}}"
+                               Height="32"
+                               Text="{Binding Name}"
+                               Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibility}}">
+                        <TextBlock.ToolTip>
+                            <TextBlock MaxWidth="360"
+                                       Text="{Binding Name}"
+                                       TextWrapping="Wrap" />
+                        </TextBlock.ToolTip>
+                    </TextBlock>
+
+                    <TextBox x:Name="RenameEditor"
+                             MinWidth="80"
+                             Padding="3,1"
+                             VerticalContentAlignment="Center"
+                             FontSize="12"
+                             TextAlignment="Center"
+                             Text="{Binding EditingName, UpdateSourceTrigger=PropertyChanged}"
+                             TextChanged="OnRenameEditorTextChanged"
+                             KeyDown="OnRenameEditorKeyDown"
+                             LostKeyboardFocus="OnRenameEditorLostFocus"
+                             IsVisibleChanged="OnRenameEditorIsVisibleChanged"
+                             Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibility}}"
+                             AutomationProperties.AutomationId="RenameEditor"
+                             AutomationProperties.Name="重命名输入框" />
+                </Grid>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SmallIconRowTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <Grid Width="{Binding DataContext.ItemContentWidth, RelativeSource={RelativeSource AncestorType=ListView}}"
+                  Margin="4,1" ToolTip="{Binding ToolTipText}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0"
+                       Width="16"
+                       Height="16"
+                       Margin="0,0,6,0"
+                       VerticalAlignment="Center"
+                       Source="{Binding Icon}" />
+                <TextBlock Grid.Column="1"
+                           VerticalAlignment="Center"
+                           FontSize="{x:Static SystemFonts.MessageFontSize}"
+                           Foreground="{DynamicResource CjTextPrimaryBrush}"
+                           Text="{Binding Name}"
+                           TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding Name}"
+                           Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibility}}" />
+                <TextBox Grid.Column="1"
+                         x:Name="RenameEditor"
+                         Padding="2,0"
+                         VerticalContentAlignment="Center"
+                         FontSize="{x:Static SystemFonts.MessageFontSize}"
+                         Text="{Binding EditingName, UpdateSourceTrigger=PropertyChanged}"
+                         TextChanged="OnRenameEditorTextChanged"
+                         KeyDown="OnRenameEditorKeyDown"
+                         LostKeyboardFocus="OnRenameEditorLostFocus"
+                         IsVisibleChanged="OnRenameEditorIsVisibleChanged"
+                         Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibility}}"
+                         AutomationProperties.AutomationId="RenameEditor"
+                         AutomationProperties.Name="重命名输入框" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="TileItemTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <Grid Width="{Binding DataContext.ItemContentWidth, RelativeSource={RelativeSource AncestorType=ListView}}"
+                  Margin="6,4" ToolTip="{Binding ToolTipText}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <controls:ThumbnailImage Grid.Column="0"
+                                         Width="48"
+                                         Height="48"
+                                         Margin="0,0,8,0"
+                                         HorizontalAlignment="Left"
+                                         VerticalAlignment="Center"
+                                         Stretch="Uniform"
+                                         RenderOptions.BitmapScalingMode="HighQuality"
+                                         FilePath="{Binding DisplayPath}"
+                                         LongPath="{Binding LongPath}"
+                                         IconSize="48"
+                                         FallbackIconSource="{Binding}"
+                                         UseThumbnail="{Binding IsImage}" />
+
+                <Grid Grid.Column="1" VerticalAlignment="Center">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <controls:MiddleEllipsisTextBlock Grid.Row="0"
+                                                      VerticalAlignment="Center"
+                                                      FontWeight="Normal"
+                                                      FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                                      Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                                      Text="{Binding Name}"
+                                                      KeepLastSegment="False"
+                                                      ToolTip="{Binding Name}"
+                                                      Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibility}}" />
+                    <TextBox Grid.Row="0"
+                             x:Name="RenameEditor"
+                             Padding="2,0"
+                             FontSize="{x:Static SystemFonts.MessageFontSize}"
+                             Text="{Binding EditingName, UpdateSourceTrigger=PropertyChanged}"
+                             TextChanged="OnRenameEditorTextChanged"
+                             KeyDown="OnRenameEditorKeyDown"
+                             LostKeyboardFocus="OnRenameEditorLostFocus"
+                             IsVisibleChanged="OnRenameEditorIsVisibleChanged"
+                             Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibility}}"
+                             AutomationProperties.AutomationId="RenameEditor"
+                             AutomationProperties.Name="重命名输入框" />
+                    <TextBlock Grid.Row="1"
+                               FontSize="12"
+                               Foreground="{DynamicResource CjTextSecondaryBrush}"
+                               Text="{Binding TypeName}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Row="2"
+                               FontSize="12"
+                               Foreground="{DynamicResource CjTextSecondaryBrush}"
+                               Text="{Binding SizeText}"
+                               TextTrimming="CharacterEllipsis" />
+                </Grid>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ContentItemTemplate" DataType="{x:Type vm:FileItemViewModel}">
+            <Grid Margin="8,3" MinHeight="54" ToolTip="{Binding ToolTipText}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Image Grid.Column="0"
+                       Width="32"
+                       Height="32"
+                       Margin="0,0,10,0"
+                       VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Source="{Binding IconForContent}" />
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <controls:MiddleEllipsisTextBlock VerticalAlignment="Center"
+                                                      FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                                      Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                                      Text="{Binding Name}"
+                                                      KeepLastSegment="False"
+                                                      ToolTip="{Binding Name}"
+                                                      Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibility}}" />
+                    <TextBox x:Name="RenameEditor"
+                             Padding="2,0"
+                             FontSize="{x:Static SystemFonts.MessageFontSize}"
+                             Text="{Binding EditingName, UpdateSourceTrigger=PropertyChanged}"
+                             TextChanged="OnRenameEditorTextChanged"
+                             KeyDown="OnRenameEditorKeyDown"
+                             LostKeyboardFocus="OnRenameEditorLostFocus"
+                             IsVisibleChanged="OnRenameEditorIsVisibleChanged"
+                             Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibility}}"
+                             AutomationProperties.AutomationId="RenameEditor"
+                             AutomationProperties.Name="重命名输入框" />
+                    <TextBlock Margin="0,1,0,0"
+                               FontSize="12"
+                               Foreground="{DynamicResource CjTextSecondaryBrush}"
+                               Text="{Binding TypeName}"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            MinWidth="220"
+                            Margin="16,0,0,0"
+                            VerticalAlignment="Center">
+                    <TextBlock FontSize="12"
+                               Foreground="{DynamicResource CjTextSecondaryBrush}"
+                               Text="{Binding LastWriteTimeText}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Margin="0,1,0,0"
+                               FontSize="12"
+                               Foreground="{DynamicResource CjTextSecondaryBrush}"
+                               Text="{Binding SizeText}"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- StretchItems=False 才严格按 ItemSize 排布，True 会把每行剩余宽度均分 -->
+        <ItemsPanelTemplate x:Key="IconWrapPanelTemplate">
+            <!-- 底部留白：列表铺满时滚到底也能右键空白处弹背景菜单 -->
+            <ui:VirtualizingWrapPanel
+                Margin="0,0,0,44"
+                ItemSize="{Binding DataContext.ItemSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                StretchItems="False" />
+        </ItemsPanelTemplate>
+
+        <ItemsPanelTemplate x:Key="ContentPanelTemplate">
+            <VirtualizingStackPanel Orientation="Vertical" Margin="0,0,0,30" />
+        </ItemsPanelTemplate>
+
+        <ItemsPanelTemplate x:Key="DetailsPanelTemplate">
+            <VirtualizingStackPanel Orientation="Vertical" Margin="0,0,0,28" />
+        </ItemsPanelTemplate>
+
+        <!-- 组头：组名 + (数量) -->
+        <DataTemplate x:Key="FileGroupHeaderTemplate">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock FontWeight="SemiBold"
+                           Foreground="{DynamicResource CjTextPrimaryBrush}"
+                           Text="{Binding Name}" />
+                <TextBlock Margin="4,0,0,0"
+                           Foreground="{DynamicResource CjTextSecondaryBrush}"
+                           Text="{Binding ItemCount, StringFormat='({0})'}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <Style x:Key="FileGroupExpanderStyle" TargetType="Expander">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <StackPanel>
+                            <ToggleButton x:Name="PART_Toggle"
+                                          HorizontalAlignment="Left"
+                                          Cursor="Hand"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent" Padding="2,2,2,2">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="Arrow"
+                                                           Width="12"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                                           Text="▼" />
+                                                <ContentPresenter VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="False">
+                                                <Setter TargetName="Arrow" Property="Text" Value="▶" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Arrow" Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                                <ContentPresenter Content="{TemplateBinding Header}"
+                                                  ContentTemplate="{TemplateBinding HeaderTemplate}" />
+                            </ToggleButton>
+                            <ContentPresenter x:Name="ItemsHost" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger SourceName="PART_Toggle" Property="IsChecked" Value="False">
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FileGroupItemStyle" TargetType="GroupItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupItem">
+                        <Expander IsExpanded="True"
+                                  Style="{StaticResource FileGroupExpanderStyle}"
+                                  HorizontalContentAlignment="Stretch"
+                                  Header="{Binding}"
+                                  HeaderTemplate="{StaticResource FileGroupHeaderTemplate}">
+                            <ItemsPresenter />
+                        </Expander>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="IconTileItemStyle" TargetType="{x:Type ListViewItem}">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    Background="Transparent"
+                                    CornerRadius="{StaticResource CjCardInnerCornerRadius}"
+                                    SnapsToDevicePixels="True" />
+                            <Border x:Name="Ring"
+                                    BorderThickness="1"
+                                    BorderBrush="Transparent"
+                                    CornerRadius="{StaticResource CjCardInnerCornerRadius}"
+                                    SnapsToDevicePixels="True" />
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                            </MultiTrigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                                <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource CjTileSelectionBorderBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsHidden}" Value="True">
+                    <Setter Property="Opacity" Value="0.55" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsCut}" Value="True">
+                    <Setter Property="Opacity" Value="0.45" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CompactRowItemStyle" TargetType="{x:Type ListViewItem}">
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="{StaticResource CjInputCornerRadius}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="3" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Rectangle x:Name="AccentBar"
+                                           Grid.Column="0"
+                                           Width="3"
+                                           RadiusX="1.5"
+                                           RadiusY="1.5"
+                                           Margin="0,3"
+                                           VerticalAlignment="Stretch"
+                                           Fill="{DynamicResource CjAccentBrush}"
+                                           Visibility="Collapsed" />
+                                <ContentPresenter Grid.Column="1"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjSelectionBackgroundBrush}" />
+                                <Setter TargetName="AccentBar" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CjHoverBackgroundBrush}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsHidden}" Value="True">
+                    <Setter Property="Opacity" Value="0.55" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsCut}" Value="True">
+                    <Setter Property="Opacity" Value="0.45" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 基于 WPF-UI 默认 TitleBar 模板，只改了 Header 列宽与标题/图标行为 -->
+        <Style x:Key="CjTitleBarStyle" TargetType="{x:Type ui:TitleBar}">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Background" Value="{DynamicResource CjWindowBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="ButtonsForeground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="16,4,16,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Height" Value="48" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="ShowHelp" Value="False" />
+            <Setter Property="ShowMinimize" Value="True" />
+            <Setter Property="ShowMaximize" Value="True" />
+            <Setter Property="ShowClose" Value="True" />
+            <Setter Property="CloseWindowByDoubleClickOnIcon" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ui:TitleBar}">
+                        <Grid x:Name="PART_MainGrid"
+                              Background="{TemplateBinding Background}"
+                              HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 应用图标 + 管理员盾牌：单击弹系统菜单 / 双击关闭由 WPF-UI 的 NCHITTEST 处理 -->
+                            <Grid x:Name="TitleGrid"
+                                  Grid.Column="0"
+                                  Margin="{TemplateBinding Padding}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ContentPresenter x:Name="PART_Icon"
+                                                      Content="{TemplateBinding Icon}"
+                                                      Height="16"
+                                                      VerticalAlignment="Center"
+                                                      Focusable="False"
+                                                      RenderOptions.BitmapScalingMode="HighQuality"
+                                                      AutomationProperties.AutomationId="TitleBarIcon" />
+                                    <Image x:Name="PART_ShieldIcon"
+                                           Width="14"
+                                           Height="14"
+                                           Margin="6,0,0,0"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False"
+                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                           Visibility="{Binding ShowTitleShield, Converter={StaticResource BoolToVisibility}}"
+                                           AutomationProperties.AutomationId="TitleBarShieldIcon" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Grid.Column="1">
+                                <Grid.ColumnDefinitions>
+                                    <!-- Header 用 * 而不是 Auto，标题文字才有宽度做中间省略 -->
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <ContentPresenter x:Name="PART_Header"
+                                                  Grid.Column="0"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Center"
+                                                  Content="{TemplateBinding Header}" />
+
+                                <ContentPresenter Grid.Column="1"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Content="{TemplateBinding TrailingContent}" />
+
+                                <Grid Grid.Column="2"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Top">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TitleBarButton ButtonType="Help"
+                                                       x:Name="PART_HelpButton"
+                                                       AutomationProperties.AutomationId="TitleBarHelpButton"
+                                                       Grid.Column="0" />
+                                    <ui:TitleBarButton ButtonType="Minimize"
+                                                       x:Name="PART_MinimizeButton"
+                                                       AutomationProperties.AutomationId="TitleBarMinimizeButton"
+                                                       Grid.Column="1" />
+                                    <ui:TitleBarButton ButtonType="Maximize"
+                                                       x:Name="PART_MaximizeButton"
+                                                       IsHitTestVisible="True"
+                                                       AutomationProperties.AutomationId="TitleBarMaximizeButton"
+                                                       Grid.Column="2" />
+                                    <ui:TitleBarButton ButtonType="Close"
+                                                       MouseOverButtonsForeground="#FFFFFFFF"
+                                                       MouseOverBackground="{DynamicResource PaletteRedBrush}"
+                                                       x:Name="PART_CloseButton"
+                                                       AutomationProperties.AutomationId="TitleBarCloseButton"
+                                                       Grid.Column="4" />
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Icon" Value="{x:Null}" />
+                                    <Condition Property="Title" Value="{x:Null}" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Visibility" TargetName="TitleGrid" Value="Collapsed" />
+                            </MultiTrigger>
+                            <Trigger Property="ApplicationTheme" Value="{x:Static wua:ApplicationTheme.Dark}">
+                                <Setter Property="ButtonsBackground" Value="#17FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="Icon" Value="{x:Null}">
+                                <Setter Property="Visibility" TargetName="PART_Icon" Value="Collapsed" />
+                                <Setter Property="Margin" TargetName="PART_Icon" Value="0,0,0,0" />
+                            </Trigger>
+                            <Trigger Property="ShowHelp" Value="False">
+                                <Setter Property="Visibility" TargetName="PART_HelpButton" Value="Collapsed" />
+                            </Trigger>
+                            <Trigger Property="ShowMinimize" Value="False">
+                                <Setter Property="Visibility" TargetName="PART_MinimizeButton" Value="Collapsed" />
+                            </Trigger>
+                            <Trigger Property="ShowMaximize" Value="False">
+                                <Setter Property="Visibility" TargetName="PART_MaximizeButton" Value="Collapsed" />
+                            </Trigger>
+                            <Trigger Property="ShowClose" Value="False">
+                                <Setter Property="Visibility" TargetName="PART_CloseButton" Value="Collapsed" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="ShowMaximize" Value="True" />
+                                    <Condition Property="IsMaximized" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="ButtonType" TargetName="PART_MaximizeButton" Value="Restore" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CjTitleBarTextStyle" TargetType="{x:Type controls:TitleBarText}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="{x:Static SystemFonts.MessageFontFamily}" />
+            <Setter Property="FontSize" Value="{x:Static SystemFonts.MessageFontSize}" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="MainForeground" Value="{DynamicResource CjTextPrimaryBrush}" />
+            <Setter Property="SuffixForeground" Value="{DynamicResource CjTextSecondaryBrush}" />
+        </Style>
+    </ui:FluentWindow.Resources>
+
+    <Grid Background="{DynamicResource CjWindowBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 删除到回收站后的撤销提示条，5 秒自动消失 -->
+        <Grid Grid.RowSpan="4" Panel.ZIndex="10">
+            <Border x:Name="RecycleBinToast"
+                    MaxWidth="520"
+                    Margin="0,0,0,40"
+                    Padding="14,10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Background="{DynamicResource CjCardBackgroundBrush}"
+                    BorderBrush="{DynamicResource CjCardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource CjCardInnerCornerRadius}"
+                    Visibility="Collapsed"
+                    AutomationProperties.AutomationId="RecycleBinToast"
+                    AutomationProperties.Name="删除提示条">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="RecycleBinToastText"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap" />
+
+                    <ui:Button x:Name="RecycleBinToastUndoButton"
+                               Grid.Column="1"
+                               Margin="12,0,0,0"
+                               VerticalAlignment="Center"
+                               Click="OnUndoDeleteClick"
+                               Content="撤销"
+                               Style="{StaticResource CjSecondaryButtonStyle}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <ui:TitleBar x:Name="MainTitleBar"
+                     Grid.Row="0"
+                     Style="{StaticResource CjTitleBarStyle}"
+                     Title="{Binding WindowTitle}"
+                     Background="{DynamicResource CjWindowBackgroundBrush}"
+                     Foreground="{DynamicResource CjTextPrimaryBrush}">
+            <!-- 应用图标随便填，Source 由 code-behind 按 DPI 赋 -->
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon />
+            </ui:TitleBar.Icon>
+            <!-- IsHitTestVisible=False 是关键：WPF-UI 的 NCHITTEST 只在标题内容不可命中时返回 HTCAPTION，拖动 / 双击最大化才还在 -->
+            <ui:TitleBar.Header>
+                <Border x:Name="TitleHeaderBorder" Background="Transparent" IsHitTestVisible="False">
+                    <controls:TitleBarText x:Name="TitleTextControl"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Left"
+                                           Style="{StaticResource CjTitleBarTextStyle}"
+                                           MainText="{Binding TitleMainText}"
+                                           SuffixText="{Binding TitleSuffixText}" />
+                </Border>
+            </ui:TitleBar.Header>
+        </ui:TitleBar>
+
+        <Border Grid.Row="1" Style="{StaticResource CjCardBorderStyle}" Margin="8,4,8,0">
+            <Grid Margin="4,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <ui:Button Command="{Binding GoBackCommand}"
+                                   Icon="{ui:SymbolIcon ArrowLeft20}"
+                                   ToolTip="后退 (Alt+←)"
+                                   AutomationProperties.Name="后退"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding GoForwardCommand}"
+                                   Icon="{ui:SymbolIcon ArrowRight20}"
+                                   ToolTip="前进 (Alt+→)"
+                                   AutomationProperties.Name="前进"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding GoUpCommand}"
+                                   Icon="{ui:SymbolIcon ArrowUp20}"
+                                   ToolTip="上一级 (Alt+↑)"
+                                   AutomationProperties.Name="上一级"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding GoThisPcCommand}"
+                                   Icon="{ui:SymbolIcon Home20}"
+                                   ToolTip="主页（此电脑）"
+                                   AutomationProperties.Name="主页"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                    </StackPanel>
+
+                    <controls:AddressBar x:Name="AddressBarControl"
+                                         Grid.Column="1"
+                                         Margin="8,0"
+                                         Location="{Binding CurrentLocationDisplay}"
+                                         ThisPcName="{x:Static vm:MainViewModel.ThisPcDisplayName}"
+                                         ThisPcToken="{x:Static vm:MainViewModel.ThisPcToken}"
+                                         SearchLocationText="{Binding SearchLocationText}"
+                                         NavigateRequested="OnAddressNavigateRequested" />
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <ui:Button Command="{Binding RefreshCommand}"
+                                   Icon="{ui:SymbolIcon ArrowSync20}"
+                                   ToolTip="刷新 (F5)"
+                                   AutomationProperties.Name="刷新"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:TextBox x:Name="SearchBox"
+                                     Width="220"
+                                     Margin="8,0,0,0"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="搜索当前文件夹"
+                                     Style="{StaticResource ToolbarTextBoxStyle}"
+                                     AutomationProperties.Name="搜索"
+                                     KeyDown="OnSearchBoxKeyDown" />
+                        <ui:Button x:Name="SearchInSubfoldersButton"
+                                   Margin="4,0,0,0"
+                                   Command="{Binding SearchInSubfoldersCommand}"
+                                   Icon="{ui:SymbolIcon Search20}"
+                                   ToolTip="在子文件夹中搜索（回车）"
+                                   AutomationProperties.Name="在子文件夹中搜索"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button x:Name="CancelSearchButton"
+                                   Margin="4,0,0,0"
+                                   Content="取消搜索"
+                                   Command="{Binding CancelSearchCommand}"
+                                   ToolTip="取消搜索 (Esc)"
+                                   Visibility="{Binding IsSearching, Converter={StaticResource BoolToVisibility}}"
+                                   AutomationProperties.Name="取消搜索"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button x:Name="PauseSearchButton"
+                                   Margin="4,0,0,0"
+                                   Command="{Binding ToggleSearchPauseCommand}"
+                                   Icon="{ui:SymbolIcon Pause20}"
+                                   ToolTip="暂停搜索"
+                                   Visibility="{Binding IsSearching, Converter={StaticResource BoolToVisibility}}"
+                                   AutomationProperties.Name="暂停搜索"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button x:Name="SearchHistoryButton"
+                                   Margin="4,0,0,0"
+                                   Click="OnSearchHistoryClick"
+                                   Icon="{ui:SymbolIcon History20}"
+                                   ToolTip="搜索历史"
+                                   AutomationProperties.Name="搜索历史"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                    </StackPanel>
+
+                    <ProgressBar x:Name="LoadingProgress"
+                                 Grid.Row="1"
+                                 Grid.ColumnSpan="3"
+                                 Height="2"
+                                 Margin="0,4,0,0"
+                                 VerticalAlignment="Bottom"
+                                 IsIndeterminate="True"
+                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}"
+                                 AutomationProperties.Name="正在加载" />
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 回收站页面隐藏，用 Visibility 而不是 IsEnabled，免得出现一堆灰按钮 -->
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                Visibility="{Binding IsCommandBarApplicable, Converter={StaticResource BoolToVisibility}}">
+                        <ui:DropDownButton x:Name="NewDropDownButton"
+                                           Command="{Binding NewMenuCommand}"
+                                           Content="新建"
+                                           Icon="{ui:SymbolIcon Add20}"
+                                           ToolTip="新建"
+                                           AutomationProperties.Name="新建"
+                                           Visibility="{Binding ShowNewButton, Converter={StaticResource BoolToVisibility}}"
+                                           Style="{StaticResource CommandBarButtonStyle}" />
+
+                        <Border Style="{StaticResource CjToolbarSeparatorStyle}" />
+
+                        <ui:Button Command="{Binding CutCommand}"
+                                   Content="剪切"
+                                   Icon="{ui:SymbolIcon Cut20}"
+                                   ToolTip="剪切 (Ctrl+X)"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding CopyCommand}"
+                                   Content="复制"
+                                   Icon="{ui:SymbolIcon Copy20}"
+                                   ToolTip="复制 (Ctrl+C)"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding PasteCommand}"
+                                   Content="粘贴"
+                                   Icon="{ui:SymbolIcon ClipboardPaste20}"
+                                   ToolTip="粘贴 (Ctrl+V)"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding RenameCommand}"
+                                   Content="重命名"
+                                   Icon="{ui:SymbolIcon Rename20}"
+                                   ToolTip="重命名 (F2)"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding DeleteCommand}"
+                                   Content="删除"
+                                   Icon="{ui:SymbolIcon Delete20}"
+                                   ToolTip="删除 (Delete)"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+
+                        <Border Style="{StaticResource CjToolbarSeparatorStyle}" />
+
+                        <ui:Button Command="{Binding CopyToCommand}"
+                                   Content="复制到…"
+                                   Icon="{ui:SymbolIcon DocumentCopy20}"
+                                   ToolTip="复制到…"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding MoveToCommand}"
+                                   Content="移动到…"
+                                   Icon="{ui:SymbolIcon ArrowMove20}"
+                                   ToolTip="移动到…"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+
+                        <!-- 修复路径：从原「⋯」下拉移出，仅在此电脑 / 回收站之外的页面显示 -->
+                        <ui:Button x:Name="RepairPathsButton"
+                                   Command="{Binding RepairPathsCommand}"
+                                   Content="修复路径…"
+                                   Icon="{ui:SymbolIcon Wrench20}"
+                                   ToolTip="修复路径…（有选中项时修复选中项，否则扫描当前文件夹）"
+                                   AutomationProperties.Name="修复路径"
+                                   Visibility="{Binding ShowRepairPathsButton, Converter={StaticResource BoolToVisibility}}"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+
+                        <Border Style="{StaticResource CjToolbarSeparatorStyle}" />
+
+                        <ui:DropDownButton x:Name="SortDropDownButton"
+                                           Content="排序"
+                                           Icon="{ui:SymbolIcon ArrowSort20}"
+                                           ToolTip="排序方式"
+                                           AutomationProperties.Name="排序"
+                                           Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:DropDownButton x:Name="ViewDropDownButton"
+                                           Content="查看"
+                                           Icon="{ui:SymbolIcon Grid20}"
+                                           ToolTip="查看方式"
+                                           AutomationProperties.Name="查看"
+                                           Style="{StaticResource CommandBarButtonStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                Visibility="{Binding IsRecycleBinView, Converter={StaticResource BoolToVisibility}}">
+                        <ui:Button Command="{Binding RestoreRecycleBinCommand}"
+                                   Content="还原选定的项目"
+                                   Icon="{ui:SymbolIcon ArrowUndo20}"
+                                   ToolTip="还原到原位置（原文件夹不存在则重建）"
+                                   AutomationProperties.Name="还原"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                        <ui:Button Command="{Binding DeleteRecycleBinPermanentlyCommand}"
+                                   Content="永久删除"
+                                   Icon="{ui:SymbolIcon DeleteLines20}"
+                                   ToolTip="永久删除选定的项目（不可撤销）"
+                                   AutomationProperties.Name="永久删除"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+
+                        <Border Style="{StaticResource CjToolbarSeparatorStyle}" />
+
+                        <ui:Button Command="{Binding EmptyRecycleBinCommand}"
+                                   Content="清空回收站"
+                                   Icon="{ui:SymbolIcon Broom20}"
+                                   ToolTip="清空回收站（不可撤销）"
+                                   AutomationProperties.Name="清空回收站"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+
+                        <Border Style="{StaticResource CjToolbarSeparatorStyle}" />
+
+                        <ui:Button Command="{Binding RefreshCommand}"
+                                   Content="刷新"
+                                   Icon="{ui:SymbolIcon ArrowSync20}"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <ToggleButton IsChecked="{Binding IsPreviewPaneOpen, Mode=TwoWay}"
+                                      ToolTip="预览窗格 (Alt+P)"
+                                      AutomationProperties.Name="预览窗格"
+                                      Style="{StaticResource CommandBarToggleButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="PanelRight20" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="预览窗格" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ToggleButton>
+
+                        <!-- 设置：所有页面（含回收站 / 搜索 / 此电脑）都显示，直接打开选项窗口 -->
+                        <ui:Button x:Name="SettingsButton"
+                                   Margin="8,0,0,0"
+                                   Command="{Binding OpenSettingsCommand}"
+                                   Content="设置"
+                                   Icon="{ui:SymbolIcon Settings20}"
+                                   ToolTip="设置"
+                                   AutomationProperties.Name="设置"
+                                   Style="{StaticResource CommandBarButtonStyle}" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource CjCardBorderStyle}" Margin="8,6,8,0">
+            <Border x:Name="FileListClip" CornerRadius="{StaticResource CjCardInnerCornerRadius}" ClipToBounds="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding NavigationWidth, Converter={StaticResource DoubleToGridLengthConverter}, Mode=TwoWay}"
+                                          MinWidth="140"
+                                          MaxWidth="480" />
+                        <ColumnDefinition Width="{StaticResource CjSplitterGridLength}" />
+                        <ColumnDefinition Width="*" MinWidth="200" />
+                        <ColumnDefinition Width="{Binding PreviewSplitterWidth}" />
+                        <ColumnDefinition Width="{Binding PreviewPaneColumnWidth, Converter={StaticResource DoubleToGridLengthConverter}, Mode=TwoWay}" />
+                    </Grid.ColumnDefinitions>
+
+                    <TreeView x:Name="NavigationTree"
+                              Grid.Column="0"
+                              AutomationProperties.AutomationId="NavigationTree"
+                              AutomationProperties.Name="导航树"
+                              ItemsSource="{Binding NavigationRoots}"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Padding="6,6"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ItemTemplate="{StaticResource NavigationTreeHeaderTemplate}"
+                              ItemContainerStyle="{StaticResource NavigationTreeItemStyle}"
+                              SelectedItemChanged="OnNavigationTreeSelectedItemChanged"
+                              TreeViewItem.Expanded="OnNavigationTreeItemExpanded" />
+
+                    <!-- 分隔线和透明 resize 手柄叠在同一列 -->
+                    <Border Grid.Column="1" Style="{StaticResource CjPanelDividerStyle}" />
+                    <GridSplitter Grid.Column="1"
+                                  Panel.ZIndex="1"
+                                  Style="{StaticResource CjSplitterStyle}" />
+
+                    <Grid Grid.Column="2">
+                        <Grid Visibility="{Binding ShowThisPcPage, Converter={StaticResource BoolToVisibility}}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Padding="14,10">
+                                <StackPanel>
+                                    <StackPanel>
+                                        <ToggleButton IsChecked="{Binding IsThisPcFolderGroupExpanded, Mode=TwoWay}"
+                                                      Style="{StaticResource ThisPcGroupHeaderToggleStyle}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Margin="0,0,6,0"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource CjTextSecondaryBrush}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="▼" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsThisPcFolderGroupExpanded}" Value="False">
+                                                                    <Setter Property="Text" Value="▶" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock VerticalAlignment="Center"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                                           Text="{Binding ThisPcFolderGroupHeader}" />
+                                            </StackPanel>
+                                        </ToggleButton>
+
+                                        <Border Height="1"
+                                                Margin="0,6,0,8"
+                                                Background="{DynamicResource CjPanelDividerBrush}" />
+
+                                        <ListBox x:Name="ThisPcFolderList"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Padding="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                                 ItemsSource="{Binding ThisPcFolders}"
+                                                 ItemTemplate="{StaticResource ThisPcFolderItemTemplate}"
+                                                 ItemContainerStyle="{StaticResource ThisPcTileItemStyle}"
+                                                 Visibility="{Binding IsThisPcFolderGroupExpanded, Converter={StaticResource BoolToVisibility}}"
+                                                 MouseDoubleClick="OnThisPcFolderDoubleClick"
+                                                 KeyDown="OnThisPcKeyDown">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
+                                        </ListBox>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,16,0,0">
+                                        <ToggleButton IsChecked="{Binding IsThisPcDriveGroupExpanded, Mode=TwoWay}"
+                                                      Style="{StaticResource ThisPcGroupHeaderToggleStyle}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Margin="0,0,6,0"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource CjTextSecondaryBrush}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="▼" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsThisPcDriveGroupExpanded}" Value="False">
+                                                                    <Setter Property="Text" Value="▶" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock VerticalAlignment="Center"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                                           Text="{Binding ThisPcDriveGroupHeader}" />
+                                            </StackPanel>
+                                        </ToggleButton>
+
+                                        <Border Height="1"
+                                                Margin="0,6,0,8"
+                                                Background="{DynamicResource CjPanelDividerBrush}" />
+
+                                        <ListBox x:Name="ThisPcDriveList"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Padding="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                                 ItemsSource="{Binding ThisPcDrives}"
+                                                 ItemTemplate="{StaticResource ThisPcDriveItemTemplate}"
+                                                 ItemContainerStyle="{StaticResource ThisPcTileItemStyle}"
+                                                 Visibility="{Binding IsThisPcDriveGroupExpanded, Converter={StaticResource BoolToVisibility}}"
+                                                 MouseDoubleClick="OnThisPcDriveDoubleClick"
+                                                 KeyDown="OnThisPcKeyDown">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
+                                        </ListBox>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+
+                        <Grid Visibility="{Binding IsRecycleBinView, Converter={StaticResource BoolToVisibility}}">
+                            <ui:ListView x:Name="RecycleBinListView"
+                                         AutomationProperties.AutomationId="RecycleBinListView"
+                                         Margin="2"
+                                         ItemsSource="{Binding RecycleBinItems}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         VirtualizingPanel.IsVirtualizing="True"
+                                         VirtualizingPanel.VirtualizationMode="Recycling"
+                                         VirtualizingPanel.ScrollUnit="Pixel"
+                                         ScrollViewer.IsDeferredScrollingEnabled="False"
+                                         SelectionMode="Extended"
+                                         AutomationProperties.Name="回收站列表"
+                                         SelectionChanged="OnRecycleBinSelectionChanged"
+                                         MouseDoubleClick="OnRecycleBinMouseDoubleClick"
+                                         KeyDown="OnRecycleBinKeyDown"
+                                         ItemContainerStyle="{StaticResource FileListRowStyle}">
+                                <ui:ListView.View>
+                                    <ui:GridView ColumnHeaderContainerStyle="{StaticResource FileListHeaderStyle}">
+                                        <ui:GridViewColumn x:Name="RecycleBinNameColumn"
+                                                           Header="名称"
+                                                           Width="200"
+                                                           CellTemplate="{StaticResource RecycleBinNameCellTemplate}" />
+                                        <ui:GridViewColumn x:Name="RecycleBinOriginalColumn"
+                                                           Header="原位置"
+                                                           Width="260"
+                                                           CellTemplate="{StaticResource RecycleBinOriginalCellTemplate}" />
+                                        <ui:GridViewColumn x:Name="RecycleBinDeletedColumn"
+                                                           Header="删除日期"
+                                                           Width="130"
+                                                           CellTemplate="{StaticResource RecycleBinDeletedCellTemplate}" />
+                                        <ui:GridViewColumn x:Name="RecycleBinSizeColumn"
+                                                           Header="大小"
+                                                           Width="110"
+                                                           CellTemplate="{StaticResource RecycleBinSizeCellTemplate}" />
+                                        <ui:GridViewColumn x:Name="RecycleBinTypeColumn"
+                                                           Header="类型"
+                                                           Width="110"
+                                                           CellTemplate="{StaticResource RecycleBinTypeCellTemplate}" />
+                                    </ui:GridView>
+                                </ui:ListView.View>
+                            </ui:ListView>
+
+                            <TextBlock Margin="24"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                       Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                       Text="{Binding RecycleBinMessage}"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasRecycleBinMessage, Converter={StaticResource BoolToVisibility}}" />
+                        </Grid>
+
+                        <ui:ListView x:Name="FileListView"
+                                     AutomationProperties.AutomationId="FileListView"
+                                     Margin="2"
+                                     ItemsSource="{Binding ItemsView}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     VirtualizingPanel.ScrollUnit="Pixel"
+                                     VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                     ScrollViewer.IsDeferredScrollingEnabled="False"
+                                      SelectionMode="Extended"
+                                      AutomationProperties.Name="文件列表"
+                                      controls:RubberBandSelector.IsEnabled="True"
+                                      controls:RubberBandSelector.NameCellOnly="True"
+                                      ItemsPanel="{StaticResource DetailsPanelTemplate}"
+                                      SelectionChanged="OnFileListSelectionChanged"
+                                     MouseDoubleClick="OnFileListMouseDoubleClick"
+                                     KeyDown="OnFileListKeyDown"
+                                     Visibility="{Binding ShowFileListView, Converter={StaticResource BoolToVisibility}}">
+                            <ui:ListView.GroupStyle>
+                                <GroupStyle ContainerStyle="{StaticResource FileGroupItemStyle}" />
+                            </ui:ListView.GroupStyle>
+                            <ui:ListView.View>
+                                <ui:GridView ColumnHeaderContainerStyle="{StaticResource FileListHeaderStyle}">
+                                    <ui:GridViewColumn x:Name="NameColumn"
+                                                       Header="名称"
+                                                       Width="360"
+                                                       CellTemplate="{StaticResource NameCellTemplate}" />
+                                    <ui:GridViewColumn x:Name="SearchFolderColumn"
+                                                       Header="所在文件夹"
+                                                       Width="0"
+                                                       CellTemplate="{StaticResource SearchFolderCellTemplate}" />
+                                    <ui:GridViewColumn x:Name="DateColumn"
+                                                       Header="修改日期"
+                                                       Width="160"
+                                                       CellTemplate="{StaticResource DateCellTemplate}" />
+                                    <ui:GridViewColumn x:Name="TypeColumn"
+                                                       Header="类型"
+                                                       Width="140"
+                                                       CellTemplate="{StaticResource TypeCellTemplate}" />
+                                    <ui:GridViewColumn x:Name="SizeColumn"
+                                                       Header="大小"
+                                                       Width="140"
+                                                       CellTemplate="{StaticResource SizeCellTemplate}" />
+                                </ui:GridView>
+                            </ui:ListView.View>
+                        </ui:ListView>
+
+                        <ui:ListView x:Name="IconListView"
+                                     AutomationProperties.AutomationId="IconListView"
+                                     Margin="2"
+                                     ItemsSource="{Binding ItemsView}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     VirtualizingPanel.ScrollUnit="Pixel"
+                                     VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                     ScrollViewer.IsDeferredScrollingEnabled="False"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     SelectionMode="Extended"
+                                     AutomationProperties.Name="文件图标列表"
+                                     controls:RubberBandSelector.IsEnabled="True"
+                                     SelectionChanged="OnIconListSelectionChanged"
+                                     MouseDoubleClick="OnFileListMouseDoubleClick"
+                                     KeyDown="OnFileListKeyDown"
+                                     Visibility="{Binding ShowIconListView, Converter={StaticResource BoolToVisibility}}">
+                            <ui:ListView.GroupStyle>
+                                <GroupStyle ContainerStyle="{StaticResource FileGroupItemStyle}" />
+                            </ui:ListView.GroupStyle>
+                        </ui:ListView>
+
+                        <TextBlock x:Name="ListAreaHint"
+                                   Margin="24"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False"
+                                   FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                   Text="{Binding ListAreaMessage}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="ListAreaHint"
+                                   AutomationProperties.Name="列表提示"
+                                   Visibility="{Binding HasListAreaMessage, Converter={StaticResource BoolToVisibility}}" />
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Margin="24,64,24,24"
+                                    AutomationProperties.AutomationId="UnavailableLocationPanel"
+                                    Visibility="{Binding ShowReturnUpButton, Converter={StaticResource BoolToVisibility}}">
+                            <ui:Button x:Name="ReturnUpButton"
+                                       Content="返回上一级"
+                                       HorizontalAlignment="Center"
+                                       Command="{Binding ReturnUpCommand}"
+                                       Style="{StaticResource CjSecondaryButtonStyle}"
+                                       AutomationProperties.AutomationId="ReturnUpButton"
+                                       AutomationProperties.Name="返回上一级" />
+                            <ui:Button x:Name="ElevationRelaunchButton"
+                                       Margin="0,8,0,0"
+                                       Content="以管理员身份重新打开"
+                                       HorizontalAlignment="Center"
+                                       Command="{Binding RelaunchElevatedCommand}"
+                                       Style="{StaticResource CjSecondaryButtonStyle}"
+                                       AutomationProperties.AutomationId="ElevationRelaunchButton"
+                                       AutomationProperties.Name="以管理员身份重新打开"
+                                       Visibility="{Binding ShowElevationRelaunchButton, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
+
+                        <TextBlock x:Name="SearchAreaHint"
+                                   Margin="24"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False"
+                                   FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                   Text="{Binding SearchMessage}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="SearchAreaHint"
+                                   AutomationProperties.Name="搜索提示"
+                                   Visibility="{Binding HasSearchMessage, Converter={StaticResource BoolToVisibility}}" />
+                    </Grid>
+
+                    <Border Grid.Column="3"
+                            Style="{StaticResource CjPanelDividerStyle}"
+                            Visibility="{Binding IsPreviewPaneOpen, Converter={StaticResource BoolToVisibility}}" />
+                    <GridSplitter Grid.Column="3"
+                                  Panel.ZIndex="1"
+                                  Style="{StaticResource CjSplitterStyle}"
+                                  Visibility="{Binding IsPreviewPaneOpen, Converter={StaticResource BoolToVisibility}}" />
+
+                    <Grid Grid.Column="4"
+                          Visibility="{Binding IsPreviewPaneOpen, Converter={StaticResource BoolToVisibility}}">
+                        <controls:PreviewPane x:Name="PreviewPaneControl"
+                                              AutomationProperties.AutomationId="PreviewPane"
+                                              AutomationProperties.Name="预览窗格" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
+
+        <Grid Grid.Row="3" Height="{StaticResource CjStatusBarHeight}" Margin="10,4,10,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="{Binding StatusText}"
+                       Style="{StaticResource StatusBarTextStyle}"
+                       TextTrimming="CharacterEllipsis" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ui:Button Command="{Binding ZoomOutCommand}"
+                           Icon="{ui:SymbolIcon ZoomOut20}"
+                           ToolTip="缩小图标 (Ctrl+滚轮)"
+                           AutomationProperties.Name="缩小"
+                           Style="{StaticResource StatusBarIconButtonStyle}" />
+                <Slider x:Name="ZoomSlider"
+                        Width="120"
+                        Height="18"
+                        Margin="4,0"
+                        VerticalAlignment="Center"
+                        Minimum="16"
+                        Maximum="256"
+                        SmallChange="4"
+                        LargeChange="16"
+                        Value="{Binding IconSize, Mode=TwoWay}"
+                        ToolTip="图标大小（16~256）"
+                        AutomationProperties.Name="缩放" />
+                <ui:Button Command="{Binding ZoomInCommand}"
+                           Icon="{ui:SymbolIcon ZoomIn20}"
+                           ToolTip="放大图标 (Ctrl+滚轮)"
+                           AutomationProperties.Name="放大"
+                           Style="{StaticResource StatusBarIconButtonStyle}" />
+                <TextBlock MinWidth="64"
+                           Margin="6,0"
+                           VerticalAlignment="Center"
+                           TextAlignment="Center"
+                           Text="{Binding ZoomText}"
+                           Style="{StaticResource StatusBarTextStyle}" />
+                <Border Style="{StaticResource CjToolbarSeparatorStyle}" />
+                <ui:Button Command="{Binding SetViewModeCommand}"
+                           CommandParameter="Details"
+                           Content="详细信息"
+                           Icon="{ui:SymbolIcon AppsList20}"
+                           ToolTip="详细信息视图 (Ctrl+Shift+6)"
+                           AutomationProperties.Name="详细信息视图"
+                           Style="{StaticResource StatusBarButtonStyle}" />
+                <ui:Button Command="{Binding SetViewModeCommand}"
+                           CommandParameter="LargeIcons"
+                           Content="大图标"
+                           Icon="{ui:SymbolIcon Grid20}"
+                           ToolTip="大图标视图 (Ctrl+Shift+2)"
+                           AutomationProperties.Name="大图标视图"
+                           Style="{StaticResource StatusBarButtonStyle}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

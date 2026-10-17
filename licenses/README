@@ -1,0 +1,37 @@
+畅径 第三方许可说明
+====================
+
+本目录收录「畅径」（ChangJing）分发的第三方组件许可原文。
+畅径自身以 MIT 许可证发布，见仓库根目录 LICENSE。
+
+文件 ⇄ 组件 ⇄ 许可证
+--------------------
+
+| 文件                              | 组件 / 包名                                   | 版本   | 许可证 |
+|-----------------------------------|-----------------------------------------------|--------|--------|
+| WPF-UI.txt                        | WPF-UI 及 WPF-UI.Abstractions                 | 4.3.0  | MIT    |
+| CommunityToolkit.Mvvm.txt         | CommunityToolkit.Mvvm                         | 8.4.2  | MIT    |
+| Newtonsoft.Json.txt               | Newtonsoft.Json（随 CustomWin.Utils 传递引入）| 13.0.3 | MIT    |
+| System.Drawing.Common.txt         | System.Drawing.Common（传递依赖）             | 6.0.0  | MIT    |
+| Microsoft.Win32.SystemEvents.txt  | Microsoft.Win32.SystemEvents（传递依赖）      | 6.0.0  | MIT    |
+| System.Data.DataSetExtensions.txt | System.Data.DataSetExtensions（传递依赖）     | 4.5.0  | MIT    |
+| Microsoft.CSharp.txt              | Microsoft.CSharp（传递依赖）                  | 4.7.0  | MIT    |
+| dotnet-runtime-8.0.txt            | .NET 8 运行时（应用程序自包含发布时随附）     | 8.0    | MIT    |
+
+说明
+----
+
+- 各文件内容为对应 NuGet 包内附带的许可原文（从本地 NuGet 缓存
+  `%USERPROFILE%\.nuget\packages\<包名>\<版本>\` 原样复制，未作翻译或改动）。
+
+- **CustomWin.Utils.Core / CustomWin.Utils.Drawing / CustomWin.Utils.Interop
+  是用户自有库（鱼塘泛舟-SQ 自有），非第三方开源依赖，未随附其许可原文。**
+  其版权与许可由作者自行决定，故本目录不含其许可文件。
+
+- 畅径以「自包含」（self-contained）方式发布，**随安装包一并分发 .NET 8 运行时**。
+  .NET 运行时以 MIT 许可证授权，版权归 .NET Foundation and Contributors，
+  许可原文见 `dotnet-runtime-8.0.txt`，来源：
+  https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+
+- 所有上述第三方组件均以 MIT 许可证授权，允许在保留版权与许可声明的前提下
+  自由使用、修改与再分发。

@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- 要 Windows.Data.Pdf 渲染 PDF 预览，TFM 得是 net8.0-windows10.0.17763.0 -->
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <!-- 本机 SDK 的 Microsoft.Windows.SDK.NET.Ref 低于 CommunityToolkit.Mvvm 8.4.2 要求，显式指定否则报 MVVMTKCFG0003 -->
+    <WindowsSdkPackageVersion>10.0.17763.56</WindowsSdkPackageVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+
+    <AssemblyName>ChangJing</AssemblyName>
+    <RootNamespace>ChangJing.App</RootNamespace>
+
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
+
+    <AssemblyTitle>畅径</AssemblyTitle>
+    <Product>畅径</Product>
+    <FileDescription>畅径 - 长路径文件管理器</FileDescription>
+    <Description>简洁、高效、易用的 Windows 长路径文件管理工具</Description>
+    <Company>鱼塘泛舟-SQ</Company>
+    <Authors>鱼塘泛舟-SQ</Authors>
+    <Copyright>Copyright (c) 2026 鱼塘泛舟-SQ (GitHubMacrro)</Copyright>
+
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 内嵌为 Resource：单文件发布时输出目录散装文件不进 exe，只有内嵌资源随程序集走 -->
+    <Resource Include="app.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CustomWin.Utils.Core" Version="3.0.2" />
+    <PackageReference Include="CustomWin.Utils.Drawing" Version="3.0.2" />
+    <PackageReference Include="CustomWin.Utils.Interop" Version="3.0.2" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+</Project>

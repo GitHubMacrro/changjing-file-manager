@@ -1,0 +1,259 @@
+<ui:FluentWindow x:Class="ChangJing.App.Views.SettingsDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:vm="clr-namespace:ChangJing.App.ViewModels"
+                 Title="选项"
+                 Width="560"
+                 Height="580"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 Background="{DynamicResource CjCardBackgroundBrush}"
+                 WindowBackdropType="None"
+                 WindowStartupLocation="CenterOwner"
+                 ExtendsContentIntoTitleBar="True">
+    <Grid Background="{DynamicResource CjCardBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar x:Name="DialogTitleBar"
+                     Grid.Row="0"
+                     Title="选项"
+                     Background="{DynamicResource CjCardBackgroundBrush}"
+                     ShowHelp="False"
+                     ShowMinimize="False"
+                     ShowMaximize="False"
+                     ShowClose="True" />
+
+        <TabControl x:Name="SettingsTabs"
+                    Grid.Row="1"
+                    Margin="16,8,16,0"
+                    Background="Transparent"
+                    BorderThickness="0">
+            <TabItem x:Name="OptionsTab"
+                     Header="选项"
+                     AutomationProperties.Name="选项分页">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,12,8,8">
+                    <StackPanel>
+                        <TextBlock FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                   FontWeight="SemiBold"
+                                   Text="外观" />
+
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center"
+                                       Margin="0,0,12,0"
+                                       Text="主题：" />
+                            <RadioButton x:Name="SystemThemeRadio"
+                                         GroupName="ThemeMode"
+                                         VerticalAlignment="Center"
+                                         Content="跟随系统"
+                                         IsChecked="{Binding UseSystemTheme, Mode=TwoWay}"
+                                         AutomationProperties.Name="主题跟随系统" />
+                            <RadioButton x:Name="LightThemeRadio"
+                                         GroupName="ThemeMode"
+                                         Margin="16,0,0,0"
+                                         VerticalAlignment="Center"
+                                         Content="浅色"
+                                         IsChecked="{Binding UseLightTheme, Mode=TwoWay}"
+                                         AutomationProperties.Name="主题浅色" />
+                            <RadioButton x:Name="DarkThemeRadio"
+                                         GroupName="ThemeMode"
+                                         Margin="16,0,0,0"
+                                         VerticalAlignment="Center"
+                                         Content="深色"
+                                         IsChecked="{Binding UseDarkTheme, Mode=TwoWay}"
+                                         AutomationProperties.Name="主题深色" />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,6,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                   Text="保存后立即生效。"
+                                   TextWrapping="Wrap" />
+
+                        <TextBlock Margin="0,20,0,0"
+                                   FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                   FontWeight="SemiBold"
+                                   Text="回收站容量" />
+
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <RadioButton x:Name="PercentRadio"
+                                         GroupName="CapacityMode"
+                                         VerticalAlignment="Center"
+                                         Content="卷容量百分比"
+                                         IsChecked="{Binding UsePercentCapacity, Mode=TwoWay}"
+                                         AutomationProperties.Name="卷容量百分比" />
+                            <TextBox x:Name="PercentBox"
+                                     Width="80"
+                                     Margin="10,0,6,0"
+                                     VerticalContentAlignment="Center"
+                                     IsEnabled="{Binding PercentEditorEnabled}"
+                                     Text="{Binding CapacityPercentText, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="容量百分比" />
+                            <TextBlock VerticalAlignment="Center" Text="%" />
+                            <TextBlock Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                       Text="{Binding PercentRangeHint}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <RadioButton x:Name="FixedRadio"
+                                         GroupName="CapacityMode"
+                                         VerticalAlignment="Center"
+                                         Content="或固定大小"
+                                         IsChecked="{Binding UseFixedCapacity, Mode=TwoWay}"
+                                         AutomationProperties.Name="固定大小" />
+                            <TextBox x:Name="GigabyteBox"
+                                     Width="80"
+                                     Margin="10,0,6,0"
+                                     VerticalContentAlignment="Center"
+                                     IsEnabled="{Binding FixedEditorEnabled}"
+                                     Text="{Binding CapacityGigabytesText, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="容量 GB" />
+                            <TextBlock VerticalAlignment="Center" Text="GB" />
+                            <TextBlock Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                       Text="{Binding GigabyteRangeHint}" />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,8,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                   Text="超出容量上限时自动清理最早删除的项目。"
+                                   TextWrapping="Wrap" />
+
+                        <TextBlock Margin="0,20,0,0"
+                                   FontSize="{x:Static SystemFonts.MessageFontSize}"
+                                   FontWeight="SemiBold"
+                                   Text="删除" />
+
+                        <CheckBox x:Name="DeleteWithoutRecycleBinCheck"
+                                  Margin="0,8,0,0"
+                                  Content="删除时不进回收站，直接永久删除（每次仍确认）"
+                                  IsChecked="{Binding DeleteWithoutRecycleBin, Mode=TwoWay}"
+                                  AutomationProperties.Name="删除时不进回收站" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem x:Name="AboutTab"
+                     Header="关于"
+                     AutomationProperties.Name="关于分页">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,12,8,8">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="48"
+                                   Height="48"
+                                   Margin="0,0,14,0"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Source="{Binding About.AppIcon}"
+                                   AutomationProperties.Name="应用图标" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource CjTextPrimaryBrush}"
+                                           Text="{Binding About.AppName}" />
+                                <TextBlock Margin="0,2,0,0"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                           Text="{Binding About.VersionText}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Margin="0,16,0,0"
+                                   Text="{Binding About.Tagline}"
+                                   TextWrapping="Wrap" />
+
+                        <TextBlock Margin="0,4,0,0"
+                                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                   Text="{Binding About.PrivacyText}"
+                                   TextWrapping="Wrap" />
+
+                        <TextBlock Margin="0,16,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                   Text="{Binding About.CopyrightLine}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Margin="0,2,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                                   Text="{Binding About.LicenseLine}"
+                                   TextWrapping="Wrap" />
+
+                        <WrapPanel Margin="0,18,0,0" Orientation="Horizontal">
+                            <ui:Button Margin="0,0,8,8"
+                                       Style="{StaticResource CjSecondaryButtonStyle}"
+                                       Content="项目主页"
+                                       Command="{Binding About.OpenHomepageCommand}"
+                                       AutomationProperties.Name="项目主页" />
+                            <ui:Button Margin="0,0,8,8"
+                                       Style="{StaticResource CjSecondaryButtonStyle}"
+                                       Content="反馈问题"
+                                       Command="{Binding About.ReportIssueCommand}"
+                                       AutomationProperties.Name="反馈问题" />
+                            <ui:Button Margin="0,0,8,8"
+                                       Style="{StaticResource CjSecondaryButtonStyle}"
+                                       Content="查看许可证"
+                                       Command="{Binding About.ViewLicenseCommand}"
+                                       AutomationProperties.Name="查看许可证" />
+                            <ui:Button Margin="0,0,8,8"
+                                       Style="{StaticResource CjSecondaryButtonStyle}"
+                                       Content="打开日志文件夹"
+                                       Command="{Binding About.OpenLogsFolderCommand}"
+                                       AutomationProperties.Name="打开日志文件夹" />
+                            <ui:Button Margin="0,0,8,8"
+                                       Style="{StaticResource CjSecondaryButtonStyle}"
+                                       Content="复制版本信息"
+                                       Command="{Binding About.CopyVersionInfoCommand}"
+                                       AutomationProperties.Name="复制版本信息" />
+                        </WrapPanel>
+
+                        <TextBlock x:Name="AboutStatusText"
+                                   Margin="0,4,0,0"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource CjAccentBrush}"
+                                   Text="{Binding About.StatusMessage}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Grid Grid.Row="2" Margin="24,16,24,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Name="ValidationText"
+                       Grid.Row="0"
+                       Margin="0,0,0,8"
+                       FontSize="12"
+                       Foreground="{DynamicResource CjDangerBrush}"
+                       Text="{Binding ValidationError}"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVisibility}}" />
+
+            <StackPanel Grid.Row="1" HorizontalAlignment="Right" Orientation="Horizontal">
+                <ui:Button x:Name="SaveButton"
+                           MinWidth="88"
+                           Style="{StaticResource CjPrimaryButtonStyle}"
+                           Click="OnSaveClick"
+                           Content="保存" />
+                <ui:Button x:Name="CancelButton"
+                           MinWidth="88"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Click="OnCancelClick"
+                           Content="取消" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

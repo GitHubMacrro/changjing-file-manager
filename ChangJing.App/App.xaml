@@ -1,0 +1,29 @@
+﻿<Application x:Class="ChangJing.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:ChangJing.App.Controls">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 启动时由 ThemeService 按系统深浅色覆盖 -->
+                <ui:ThemesDictionary Theme="Light" />
+                <ui:ControlsDictionary />
+                <!-- 畅径主题：全部控件样式，放 WPF-UI 之后覆盖其主题画刷 -->
+                <ResourceDictionary Source="Themes/ChangJingTheme.xaml" />
+                <!--
+                  畅径调色板（M5-fix3）：作为**独立的顶层合并字典**放在最后，ThemeService 只替换这一个槽
+                  为什么必须顶层：WPF 不会把「嵌套 MergedDictionaries 内的槽被替换」这一变化通知给
+                  已经解析过的 DynamicResource 消费者（已实测：app.TryFindResource 会变，但已加载元素
+                  的画刷不变）→ 换肤不生效。顶层槽替换会正确通知（实测有效）
+                  放在最后保证它优先于 WPF-UI 的主题字典与 ControlsDictionary 生效
+                -->
+                <ResourceDictionary Source="Themes/ChangJingTheme.Light.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <controls:DoubleToGridLengthConverter x:Key="DoubleToGridLengthConverter" />
+            <controls:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

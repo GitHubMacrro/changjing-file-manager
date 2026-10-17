@@ -1,0 +1,96 @@
+<ui:FluentWindow x:Class="ChangJing.App.Views.ElevationRequiredDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="需要管理员权限"
+                 Width="440"
+                 SizeToContent="Height"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 Background="{DynamicResource CjWindowBackgroundBrush}"
+                 WindowBackdropType="None"
+                 WindowStartupLocation="CenterOwner"
+                 ExtendsContentIntoTitleBar="True"
+                 FontFamily="{x:Static SystemFonts.MessageFontFamily}"
+                 FontSize="{x:Static SystemFonts.MessageFontSize}">
+    <Grid Background="{DynamicResource CjWindowBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar x:Name="DialogTitleBar"
+                     Grid.Row="0"
+                     Title="需要管理员权限"
+                     Background="{DynamicResource CjWindowBackgroundBrush}"
+                     ShowHelp="False"
+                     ShowMinimize="False"
+                     ShowMaximize="False"
+                     ShowClose="True" />
+
+        <TextBlock Grid.Row="1"
+                   Margin="24,12,24,0"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource CjTextPrimaryBrush}"
+                   Text="需要管理员权限才能操作此文件夹"
+                   TextWrapping="Wrap" />
+
+        <Border Grid.Row="2"
+                Margin="24,10,24,0"
+                Padding="10,8"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+            <TextBlock x:Name="FolderTextBlock"
+                       Foreground="{DynamicResource CjTextPrimaryBrush}"
+                       TextWrapping="Wrap" />
+        </Border>
+
+        <TextBlock Grid.Row="3"
+                   Margin="24,12,24,0"
+                   Foreground="{DynamicResource CjTextSecondaryBrush}"
+                   Text="你可以用管理员身份重新打开畅径再试，或跳过此项。"
+                   TextWrapping="Wrap" />
+
+        <!-- 复选框独占一行：与按钮同一行时 `*` 列会被按钮挤窄，高 DPI 下文字被裁切 -->
+        <Grid Grid.Row="4" Margin="24,18,24,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <CheckBox x:Name="ApplyToAllCheck"
+                      Grid.Row="0"
+                      Margin="0,0,0,14"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      Content="对所有此类项目执行此操作" />
+
+            <StackPanel Grid.Row="1"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal">
+                <ui:Button x:Name="SkipButton"
+                           MinWidth="72"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Click="OnSkipClick"
+                           Content="跳过" />
+                <ui:Button x:Name="CancelButton"
+                           MinWidth="72"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjSecondaryButtonStyle}"
+                           Click="OnCancelClick"
+                           Content="取消" />
+                <ui:Button x:Name="RelaunchButton"
+                           MinWidth="150"
+                           Margin="8,0,0,0"
+                           Style="{StaticResource CjPrimaryButtonStyle}"
+                           Click="OnRelaunchClick"
+                           Content="以管理员身份重新打开" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>
