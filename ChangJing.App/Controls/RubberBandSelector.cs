@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace ChangJing.App.Controls;
 
@@ -125,13 +126,19 @@ public static class RubberBandSelector
     {
         public bool Active;
         public Point Start;
+        public Point Current;
         public SelectionBandAdorner? Adorner;
         public AdornerLayer? Layer;
         public bool Additive;
+        public ScrollViewer? Scroll;
+        public DispatcherTimer? ScrollTimer;
         public readonly List<object> Baseline = new();
     }
 
     private static readonly Dictionary<ListView, DragState> States = new();
+
+    // 边缘多少像素内开始自动滚动
+    private const double AutoScrollMargin = 24;
 
     private static DragState GetState(ListView listView)
     {
@@ -139,7 +146,11 @@ public static class RubberBandSelector
         {
             state = new DragState();
             States[listView] = state;
-            listView.Unloaded += (_, _) => States.Remove(listView);
+            listView.Unloaded += (_, _) =>
+            {
+                StopAutoScroll(state);
+                States.Remove(listView);
+            };
         }
 
         return state;
@@ -152,18 +163,26 @@ public static class RubberBandSelector
             return;
         }
 
+        DependencyObject? source = e.OriginalSource as DependencyObject;
+
+        // 行内交互控件（复选框）自己处理点击，不介入
+        if (ListHitTest.IsItemChromeHit(source))
+        {
+            return;
+        }
+
         // 点在行／列头／滚动条上时不介入，NameCellOnly 下点行内空白按背景处理
-        var hitItem = FindAncestor<ListViewItem>(e.OriginalSource as DependencyObject);
+        var hitItem = FindAncestor<ListViewItem>(source);
         bool nameCellOnly = GetNameCellOnly(listView);
-        bool onNameContent = ListHitTest.IsNameContentHit(e.OriginalSource as DependencyObject);
+        bool onNameContent = ListHitTest.IsNameContentHit(source);
 
         if (hitItem is not null && (!nameCellOnly || onNameContent))
         {
             return;
         }
 
-        if (FindAncestor<GridViewColumnHeader>(e.OriginalSource as DependencyObject) is not null
-            || FindAncestor<ScrollBar>(e.OriginalSource as DependencyObject) is not null)
+        if (FindAncestor<GridViewColumnHeader>(source) is not null
+            || FindAncestor<ScrollBar>(source) is not null)
         {
             return;
         }
@@ -171,7 +190,9 @@ public static class RubberBandSelector
         DragState state = GetState(listView);
         state.Active = true;
         state.Start = e.GetPosition(listView);
+        state.Current = state.Start;
         state.Additive = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+        state.Scroll = FindScrollViewer(listView);
 
         // NameCellOnly 下点行内空白，抑制 ListViewItem 默认选中
         if (nameCellOnly && hitItem is not null)
@@ -210,8 +231,14 @@ public static class RubberBandSelector
             return;
         }
 
-        Point current = e.GetPosition(listView);
-        Rect band = new(state.Start, current);
+        state.Current = e.GetPosition(listView);
+        UpdateBand(listView, state);
+        UpdateAutoScroll(listView, state);
+    }
+
+    private static void UpdateBand(ListView listView, DragState state)
+    {
+        Rect band = new(state.Start, state.Current);
 
         // 拖动距离太小时不显示框，避免单击空白闪烁
         if (band.Width < 3 && band.Height < 3)
@@ -220,10 +247,110 @@ public static class RubberBandSelector
         }
 
         EnsureAdorner(listView, state);
-        state.Adorner!.Band = band;
-        state.Adorner.InvalidateVisual();
+        if (state.Adorner is not null)
+        {
+            state.Adorner.Band = band;
+            state.Adorner.InvalidateVisual();
+        }
 
         SelectInBand(listView, band, state.Additive, state.Baseline);
+    }
+
+    // 拖到列表上下边缘时持续滚动，滚动后按当前指针位置重新判定
+    private static void UpdateAutoScroll(ListView listView, DragState state)
+    {
+        if (state.Scroll is not { } scroll)
+        {
+            return;
+        }
+
+        double y = state.Current.Y;
+        double height = listView.ActualHeight;
+        double delta = 0;
+
+        if (y < AutoScrollMargin)
+        {
+            delta = -Math.Max(6, (AutoScrollMargin - y) / 2);
+        }
+        else if (y > height - AutoScrollMargin)
+        {
+            delta = Math.Max(6, (y - (height - AutoScrollMargin)) / 2);
+        }
+
+        if (delta == 0)
+        {
+            StopAutoScroll(state);
+            return;
+        }
+
+        state.ScrollTimer ??= CreateAutoScrollTimer(listView, state);
+        state.ScrollTimer.Tag = delta;
+        if (!state.ScrollTimer.IsEnabled)
+        {
+            state.ScrollTimer.Start();
+        }
+    }
+
+    private static DispatcherTimer CreateAutoScrollTimer(ListView listView, DragState state)
+    {
+        var timer = new DispatcherTimer(DispatcherPriority.Background, listView.Dispatcher)
+        {
+            Interval = TimeSpan.FromMilliseconds(40),
+        };
+
+        timer.Tick += (_, _) =>
+        {
+            if (!state.Active || state.Scroll is not { } scroll)
+            {
+                StopAutoScroll(state);
+                return;
+            }
+
+            double delta = timer.Tag is double value ? value : 0;
+            double before = scroll.VerticalOffset;
+            scroll.ScrollToVerticalOffset(before + delta);
+
+            // 已到顶 / 到底就不再空转
+            if (Math.Abs(scroll.VerticalOffset - before) < 0.5)
+            {
+                StopAutoScroll(state);
+                return;
+            }
+
+            UpdateBand(listView, state);
+        };
+
+        return timer;
+    }
+
+    private static void StopAutoScroll(DragState state)
+    {
+        if (state.ScrollTimer is not null)
+        {
+            state.ScrollTimer.Stop();
+            state.ScrollTimer = null;
+        }
+    }
+
+    private static ScrollViewer? FindScrollViewer(DependencyObject root)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is ScrollViewer viewer)
+            {
+                return viewer;
+            }
+
+            ScrollViewer? found = FindScrollViewer(child);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private static void OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -278,6 +405,7 @@ public static class RubberBandSelector
     {
         DragState state = GetState(listView);
         state.Active = false;
+        StopAutoScroll(state);
 
         if (state.Adorner is not null && state.Layer is not null)
         {
@@ -286,6 +414,7 @@ public static class RubberBandSelector
 
         state.Adorner = null;
         state.Layer = null;
+        state.Scroll = null;
         state.Baseline.Clear();
 
         if (listView.IsMouseCaptured)
@@ -314,12 +443,19 @@ public static class RubberBandSelector
     private sealed class SelectionBandAdorner : Adorner
     {
         private readonly Pen _pen;
+        private readonly SolidColorBrush _fill;
 
         public SelectionBandAdorner(UIElement adornedElement)
             : base(adornedElement)
         {
-            _pen = new Pen(new SolidColorBrush(Color.FromArgb(0xB0, 0x00, 0x78, 0xD4)), 1);
+            // 跟随主题强调色，深浅色下都看得清
+            Color accent = ResolveAccentColor(adornedElement);
+            _fill = new SolidColorBrush(Color.FromArgb(0x33, accent.R, accent.G, accent.B));
+            _fill.Freeze();
+
+            _pen = new Pen(new SolidColorBrush(Color.FromArgb(0xC0, accent.R, accent.G, accent.B)), 1);
             _pen.Freeze();
+
             Band = Rect.Empty;
             IsHitTestVisible = false;
         }
@@ -336,9 +472,17 @@ public static class RubberBandSelector
                 return;
             }
 
-            var fill = new SolidColorBrush(Color.FromArgb(0x30, 0x00, 0x78, 0xD4));
-            fill.Freeze();
-            drawingContext.DrawRectangle(fill, _pen, Band);
+            drawingContext.DrawRectangle(_fill, _pen, Band);
+        }
+
+        private static Color ResolveAccentColor(UIElement element)
+        {
+            if (element is FrameworkElement fe && fe.TryFindResource("CjAccentColor") is Color color)
+            {
+                return color;
+            }
+
+            return Color.FromRgb(0x25, 0x63, 0xEB);
         }
     }
 }

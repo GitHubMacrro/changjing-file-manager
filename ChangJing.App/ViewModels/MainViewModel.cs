@@ -713,7 +713,22 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
+        RememberSelectionForReload();
         BeginLoad();
+    }
+
+    // 刷新 / 排序会重建列表，先记下选中项路径供加载后恢复
+    private void RememberSelectionForReload()
+    {
+        // 调用方已指定要恢复的选择时不覆盖
+        if (_selectedItems.Count == 0 || _selectionToRestore is not null)
+        {
+            return;
+        }
+
+        _selectionToRestore = new HashSet<string>(
+            _selectedItems.Select(item => item.DisplayPath),
+            StringComparer.OrdinalIgnoreCase);
     }
 
     [RelayCommand]
@@ -1276,12 +1291,15 @@ public sealed partial class MainViewModel : ObservableObject
         var item = new FileItemViewModel(entry);
         InsertItemInSortedPosition(item);
 
+        // 新建前的选择，撤销后要回到它
+        string[] selectionBefore = CurrentSelectionPaths();
+
         // 选中并立即进入原地重命名
         RequestFocus(item, beginRename: true);
         StatusText = $"已新建文件夹：{result.DisplayPath}。";
 
         // 压入操作历史栈
-        PushCreateHistory(result.DisplayPath, isDirectory: true);
+        PushCreateHistory(result.DisplayPath, isDirectory: true, selectionBefore);
     }
 
     public bool CanCreateFolder() => !IsThisPcView && !IsRecycleBinView && !IsSearchResultView;
@@ -1359,11 +1377,15 @@ public sealed partial class MainViewModel : ObservableObject
 
         var vm = new FileItemViewModel(entry);
         InsertItemInSortedPosition(vm);
+
+        // 新建前的选择，撤销后要回到它
+        string[] selectionBefore = CurrentSelectionPaths();
+
         RequestFocus(vm, beginRename: true);
         StatusText = $"已新建{typeName}：{result.DisplayPath}。";
 
         // 压入操作历史栈
-        PushCreateHistory(result.DisplayPath, isDirectory: entry.IsDirectory);
+        PushCreateHistory(result.DisplayPath, isDirectory: entry.IsDirectory, selectionBefore);
     }
 
     public event Func<string?>? ShortcutTargetRequested;
@@ -1519,6 +1541,9 @@ public sealed partial class MainViewModel : ObservableObject
 
         // 就地更新条目，再按当前排序重新定位
         string oldLongPath = item.LongPath;
+
+        // 重命名前先记下选择，撤销后要按原名恢复
+        string[] selectionBefore = CurrentSelectionPaths();
         if (FileOperations.TryGetEntryInfo(
                 result.LongPath,
                 out uint attributes,
@@ -1541,9 +1566,11 @@ public sealed partial class MainViewModel : ObservableObject
 
         // 压入操作历史栈
         string originalDisplayPath = PathHelper.ToDisplay(oldLongPath);
-        PushRenameHistory(originalDisplayPath, item.DisplayPath, item.LastWriteTime == DateTime.MinValue
-            ? DateTime.MinValue
-            : item.LastWriteTime.ToUniversalTime());
+        PushRenameHistory(
+            originalDisplayPath,
+            item.DisplayPath,
+            item.LastWriteTime == DateTime.MinValue ? DateTime.MinValue : item.LastWriteTime.ToUniversalTime(),
+            selectionBefore);
         return true;
     }
 
@@ -1790,11 +1817,11 @@ public sealed partial class MainViewModel : ObservableObject
 
         var sources = entries.Select(entry => entry.DisplayPath).ToArray();
 
-        // 携带历史上下文
-        var history = new OperationHistoryContext(
+        // 携带历史上下文，选择在发起时记下
+        var history = TrackTransfer(new OperationHistoryContext(
             operation == ClipboardOperation.Cut ? OperationHistoryKind.Move : OperationHistoryKind.Copy,
             _currentLocation,
-            sources);
+            sources));
 
         // 剪切粘贴成功后要清空内部剪贴板的剪切项
         FileTransferResult result = operation == ClipboardOperation.Cut
@@ -1854,10 +1881,13 @@ public sealed partial class MainViewModel : ObservableObject
         // 列表即时移除对应项（永久删除完成后另有刷新）
         if (result.RecycleBinCount > 0)
         {
+            // 移除会清空选择，先把删除前的选择记下来
+            string[] selectionBefore = CurrentSelectionPaths();
+
             RemoveItemsByPaths(targets);
 
             // 删除到回收站压入操作历史栈
-            PushDeleteHistory();
+            PushDeleteHistory(selectionBefore);
         }
 
         return result;
@@ -1996,10 +2026,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         FileTransferResult result = kind == OperationKind.Move
-            ? _coordinator.Move(sources, targetDisplayPath, new OperationHistoryContext(
-                OperationHistoryKind.Move, targetDisplayPath, sources))
-            : _coordinator.Copy(sources, targetDisplayPath, new OperationHistoryContext(
-                OperationHistoryKind.Copy, targetDisplayPath, sources));
+            ? _coordinator.Move(sources, targetDisplayPath, TrackTransfer(new OperationHistoryContext(
+                OperationHistoryKind.Move, targetDisplayPath, sources)))
+            : _coordinator.Copy(sources, targetDisplayPath, TrackTransfer(new OperationHistoryContext(
+                OperationHistoryKind.Copy, targetDisplayPath, sources)));
 
         if (result.Started)
         {
@@ -2589,6 +2619,7 @@ public sealed partial class MainViewModel : ObservableObject
         _selectedItems.AddRange(selected);
         UpdateStatusText();
         UpdateCommandStates();
+        RaiseSelectionStateChanged();
 
         // 预览窗格跟随选中项
         PreviewSelectionChanged?.Invoke(this, EventArgs.Empty);
@@ -3396,6 +3427,9 @@ public sealed partial class MainViewModel : ObservableObject
 
         RestoreSelectionAfterRefresh();
 
+        // 换目录后选择归零，表头全选框与选择命令要跟着刷新
+        RaiseSelectionStateChanged();
+
         UpdateStatusText();
         UpdateNavigationStates();
 
@@ -3597,6 +3631,12 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         _items.EndUpdate();
+
+        // 集合 Reset 会清掉 ListView 的选中，排序后按对象重新选中
+        if (_selectedItems.Count > 0)
+        {
+            SelectionApplyRequested?.Invoke(this, _selectedItems.ToArray());
+        }
     }
 
     private int CompareItems(FileItemViewModel a, FileItemViewModel b)
@@ -4044,7 +4084,7 @@ public sealed partial class MainViewModel : ObservableObject
 
             if (_selectedItems.Count > 0)
             {
-                builder.Append($"   |   已选择 {_selectedItems.Count} 个");
+                builder.Append($"   |   {BuildSelectionStatus()}");
             }
 
             StatusText = builder.ToString();
@@ -4062,23 +4102,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (_selectedItems.Count > 0)
         {
-            builder.Append($"   |   已选择 {_selectedItems.Count} 个");
-
-            ulong totalSize = 0;
-            bool hasFile = false;
-            foreach (FileItemViewModel item in _selectedItems)
-            {
-                if (!item.IsDirectory)
-                {
-                    totalSize += item.SizeBytes;
-                    hasFile = true;
-                }
-            }
-
-            if (hasFile)
-            {
-                builder.Append($"（合计 {FileItemViewModel.FormatSize(totalSize)}）");
-            }
+            builder.Append($"   |   {BuildSelectionStatus()}");
         }
 
         if (_problematicCount > 0)

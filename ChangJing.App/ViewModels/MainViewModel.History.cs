@@ -39,6 +39,13 @@ public sealed partial class MainViewModel
 
     private void ExecuteHistoryStep(bool undo)
     {
+        HistoryEntry? entry = undo ? _history.PeekUndo() : _history.PeekRedo();
+
+        // 撤销恢复到该操作前的选择；重做恢复到重做前的选择
+        IReadOnlyList<string>? wanted = undo
+            ? entry?.SelectionBeforeOperation
+            : _selectedItems.Select(item => item.DisplayPath).ToArray();
+
         HistoryStepResult result = undo
             ? _history.Undo(new HistoryOperationsBridge(this))
             : _history.Redo(new HistoryOperationsBridge(this));
@@ -51,6 +58,11 @@ public sealed partial class MainViewModel
 
         if (!IsThisPcView && !IsRecycleBinView)
         {
+            if (wanted is { Count: > 0 })
+            {
+                _selectionToRestore = new HashSet<string>(wanted, StringComparer.OrdinalIgnoreCase);
+            }
+
             Refresh();
         }
         else
@@ -75,7 +87,11 @@ public sealed partial class MainViewModel
 
     // 压入历史栈
 
-    private void PushRenameHistory(string originalDisplayPath, string newDisplayPath, DateTime lastWriteUtc)
+    private void PushRenameHistory(
+        string originalDisplayPath,
+        string newDisplayPath,
+        DateTime lastWriteUtc,
+        IReadOnlyList<string>? selectionBefore = null)
     {
         if (string.IsNullOrEmpty(originalDisplayPath) || string.IsNullOrEmpty(newDisplayPath)
             || string.Equals(originalDisplayPath, newDisplayPath, StringComparison.OrdinalIgnoreCase))
@@ -83,11 +99,13 @@ public sealed partial class MainViewModel
             return;
         }
 
-        _history.Push(new RenameHistoryEntry(originalDisplayPath, newDisplayPath, lastWriteUtc));
+        var entry = new RenameHistoryEntry(originalDisplayPath, newDisplayPath, lastWriteUtc);
+        entry.SelectionBeforeOperation = selectionBefore ?? CurrentSelectionPaths();
+        _history.Push(entry);
         RaiseHistoryChanged();
     }
 
-    private void PushCreateHistory(string createdDisplayPath, bool isDirectory)
+    private void PushCreateHistory(string createdDisplayPath, bool isDirectory, IReadOnlyList<string>? selectionBefore = null)
     {
         if (string.IsNullOrEmpty(createdDisplayPath))
         {
@@ -116,11 +134,14 @@ public sealed partial class MainViewModel
             LogManager.Warning(typeof(MainViewModel), $"读取新建项内容失败（重做将建空文件）：{ex.Message}");
         }
 
-        _history.Push(new CreateHistoryEntry(createdDisplayPath, isDirectory, content, lastWriteUtc));
+        _history.Push(new CreateHistoryEntry(createdDisplayPath, isDirectory, content, lastWriteUtc)
+        {
+            SelectionBeforeOperation = selectionBefore ?? CurrentSelectionPaths(),
+        });
         RaiseHistoryChanged();
     }
 
-    private void PushDeleteHistory()
+    private void PushDeleteHistory(IReadOnlyList<string>? selectionBefore = null)
     {
         IReadOnlyList<RecycleBinEntry> batch = _recycleBin.LastBatchEntries;
         if (batch.Count == 0)
@@ -128,9 +149,16 @@ public sealed partial class MainViewModel
             return;
         }
 
-        _history.Push(new DeleteHistoryEntry(batch.ToList()));
+        _history.Push(new DeleteHistoryEntry(batch.ToList())
+        {
+            SelectionBeforeOperation = selectionBefore ?? CurrentSelectionPaths(),
+        });
         RaiseHistoryChanged();
     }
+
+    /// <summary>当前选中项的普通路径，供历史条目记录</summary>
+    private string[] CurrentSelectionPaths()
+        => _selectedItems.Select(item => item.DisplayPath).ToArray();
 
     private void PushTransferHistory(OperationHistoryContext? history, OperationResult result)
     {
@@ -162,10 +190,22 @@ public sealed partial class MainViewModel
             return;
         }
 
-        _history.Push(entries.Count == 1
+        HistoryEntry pushed = entries.Count == 1
             ? entries[0]
-            : new BatchHistoryEntry(history.Kind, entries));
+            : new BatchHistoryEntry(history.Kind, entries);
+
+        // 用发起操作时记下的选择，此刻的选中项已经是操作后的了
+        pushed.SelectionBeforeOperation = history.SelectionBeforeOperation ?? CurrentSelectionPaths();
+
+        _history.Push(pushed);
         RaiseHistoryChanged();
+    }
+
+    /// <summary>发起复制 / 移动前记下选择，供历史条目在完成时使用</summary>
+    private OperationHistoryContext TrackTransfer(OperationHistoryContext history)
+    {
+        history.SelectionBeforeOperation = CurrentSelectionPaths();
+        return history;
     }
 
     private static bool TryGetPathInfoCore(string displayPath, out DateTime lastWriteUtc, out bool isDirectory)

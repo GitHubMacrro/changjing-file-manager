@@ -10,7 +10,7 @@ using ChangJing.App.Views;
 
 namespace ChangJing.Regression;
 
-/// <summary>公开发布前套件：工具栏按钮 / 关于页断言 + docs\images 截图生成</summary>
+/// <summary>公开发布前套件：工具栏按钮 / 关于页断言 + 截图生成</summary>
 // 演示数据只落在 %TEMP%\cj-demo-*；用 subst 映射一个盘符，使截图里的路径不含用户名 / 本机私有信息
 public static class PublishSuiteRunner
 {
@@ -20,7 +20,7 @@ public static class PublishSuiteRunner
 
     private static string _deepestDir = string.Empty;
 
-    /// <summary>截图输出目录（仓库 docs\images）</summary>
+    /// <summary>截图输出目录（临时目录，不写仓库）</summary>
     public static string ImagesDirectory { get; } = ResolveImagesDirectory();
 
     public static void Run()
@@ -326,18 +326,19 @@ public static class PublishSuiteRunner
 
     private static string ResolveImagesDirectory()
     {
-        // 从可执行文件目录往上找仓库根（含 ChangJing.sln）
-        string? dir = AppContext.BaseDirectory;
-        for (int i = 0; i < 8 && dir is not null; i++)
+        // 截图只落临时目录，回归不再改仓库里的 docs\images
+        string dir = Path.Combine(Path.GetTempPath(), "cj-docs-images");
+        try
         {
-            if (File.Exists(Path.Combine(dir, "ChangJing.sln")))
-            {
-                return Path.Combine(dir, "docs", "images");
-            }
-
-            dir = Path.GetDirectoryName(dir.TrimEnd(Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(dir);
+        }
+        catch
+        {
+            // 建不出来就退到测试工作目录
+            dir = Path.Combine(H.Root, "images");
+            Directory.CreateDirectory(dir);
         }
 
-        return Path.Combine(Path.GetTempPath(), "cj-docs-images");
+        return dir;
     }
 }
