@@ -114,9 +114,10 @@ public partial class MainWindow
             return;
         }
 
-        // 空白处按下留给橡皮筋框选
+        // 空白处按下留给橡皮筋框选；复选框等行内控件不拖动
         var hitItem = FindAncestor<System.Windows.Controls.ListViewItem>(e.OriginalSource as DependencyObject);
-        if (hitItem?.DataContext is not FileItemViewModel)
+        if (hitItem?.DataContext is not FileItemViewModel
+            || Controls.ListHitTest.IsItemChromeHit(e.OriginalSource as DependencyObject))
         {
             return;
         }

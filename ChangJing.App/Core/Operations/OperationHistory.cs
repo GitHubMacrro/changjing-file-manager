@@ -122,6 +122,12 @@ public sealed class OperationHistory
 
     public int RedoCount => _redo.Count;
 
+    /// <summary>下一步要撤销的条目，无则 null</summary>
+    public HistoryEntry? PeekUndo() => _undo.Count > 0 ? _undo[^1] : null;
+
+    /// <summary>下一步要重做的条目，无则 null</summary>
+    public HistoryEntry? PeekRedo() => _redo.Count > 0 ? _redo[^1] : null;
+
     public void Clear()
     {
         _undo.Clear();
@@ -191,6 +197,9 @@ public sealed class OperationHistory
 public abstract class HistoryEntry
 {
     public abstract OperationHistoryKind Kind { get; }
+
+    /// <summary>操作前的选中项路径，撤销后按它恢复选择</summary>
+    public IReadOnlyList<string> SelectionBeforeOperation { get; set; } = Array.Empty<string>();
 
     /// <summary>动作名，用于菜单文案</summary>
     public string KindText => Kind switch

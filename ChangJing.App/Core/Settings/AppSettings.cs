@@ -26,6 +26,9 @@ public sealed class AppSettings
     /// <summary>详细信息紧凑模式，true 行高 22 否则 28</summary>
     public bool IsCompactMode { get; set; }
 
+    /// <summary>项目复选框模式，默认关</summary>
+    public bool ShowCheckBoxes { get; set; }
+
     /// <summary>每文件夹记住视图与排序，按规范化普通路径存，超限 LRU 淘汰</summary>
     public List<FolderViewState> FolderViews { get; set; } = new();
 

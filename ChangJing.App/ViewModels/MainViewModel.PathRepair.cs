@@ -208,7 +208,7 @@ public sealed partial class MainViewModel : IPathRepairHost
             }
         }
 
-        var history = new OperationHistoryContext(OperationHistoryKind.Move, target, sourceDisplayPaths.ToList());
+        var history = TrackTransfer(new OperationHistoryContext(OperationHistoryKind.Move, target, sourceDisplayPaths.ToList()));
         FileTransferResult result = _coordinator.Move(sourceDisplayPaths, target, history);
 
         if (!result.Started)

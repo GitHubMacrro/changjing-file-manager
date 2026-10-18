@@ -197,8 +197,11 @@ public partial class MainWindow
         bool nameCellOnly = Controls.RubberBandSelector.GetNameCellOnly(list);
         bool onNameContent = Controls.ListHitTest.IsNameContentHit(source);
 
+        // 行内复选框等控件上右键，按命中该项处理，别当空白清掉选择
+        bool onChrome = Controls.ListHitTest.IsItemChromeHit(source);
+
         // NameCellOnly 视图下，行内但不在名称内容上算背景
-        bool background = hitItem is null || (nameCellOnly && !onNameContent);
+        bool background = hitItem is null || (nameCellOnly && !onNameContent && !onChrome);
         if (background)
         {
             return (false, null, hitItem is null || nameCellOnly);
@@ -405,6 +408,13 @@ public partial class MainWindow
 
         menu.Items.Add(new Separator());
 
+        SelectionMenuItems selection = PopulateSelectionItems(menu);
+
+        // 打开时按当前选中项重算可用状态
+        menu.Opened += (_, _) => RefreshSelectionItems(selection);
+
+        menu.Items.Add(new Separator());
+
         menu.Items.Add(CreateItem("刷新", SymbolRegular.ArrowSync20, _viewModel.RefreshCommand, "F5"));
 
         menu.Items.Add(new Separator());
@@ -526,6 +536,8 @@ public partial class MainWindow
         public Dictionary<FileViewMode, UiMenuItem> Modes { get; } = new();
 
         public UiMenuItem? CompactMode;
+
+        public UiMenuItem? CheckBoxes;
     }
 
     private UiMenuItem BuildViewSubmenu()
@@ -537,6 +549,10 @@ public partial class MainWindow
         };
 
         PopulateViewItems(submenu);
+        SelectionMenuItems selection = PopulateSelectionItems(submenu);
+
+        // 展开时按当前选中项重算可用状态
+        submenu.SubmenuOpened += (_, _) => RefreshSelectionItems(selection);
         return submenu;
     }
 
@@ -646,9 +662,23 @@ public partial class MainWindow
     {
         var menu = new ContextMenu();
         ViewMenuItems items = PopulateViewItems(menu);
+        SelectionMenuItems selection = PopulateSelectionItems(menu);
 
-        menu.Opened += (_, _) => RefreshViewChecks(items);
+        menu.Opened += (_, _) =>
+        {
+            RefreshViewChecks(items);
+            RefreshSelectionItems(selection);
+        };
+
         return menu;
+    }
+
+    // 选择命令的菜单项，Opened 时要刷新可用状态
+    private sealed class SelectionMenuItems
+    {
+        public UiMenuItem? SelectAll;
+        public UiMenuItem? Clear;
+        public UiMenuItem? Invert;
     }
 
     private ViewMenuItems PopulateViewItems(ItemsControl target)
@@ -680,6 +710,14 @@ public partial class MainWindow
             isCheckable: true,
             isChecked: _viewModel.IsCompactMode);
 
+        // 项目复选框
+        items.CheckBoxes = CreateItem(
+            "项目复选框",
+            SymbolRegular.CheckboxChecked20,
+            _viewModel.ToggleCheckBoxesCommand,
+            isCheckable: true,
+            isChecked: _viewModel.ShowCheckBoxes);
+
         return items;
     }
 
@@ -691,6 +729,49 @@ public partial class MainWindow
         }
 
         SetChecked(items.CompactMode, _viewModel.IsCompactMode);
+        SetChecked(items.CheckBoxes, _viewModel.ShowCheckBoxes);
+    }
+
+    // 选择命令：空白右键菜单与「查看」下拉共用
+    private SelectionMenuItems PopulateSelectionItems(ItemsControl target)
+    {
+        var items = new SelectionMenuItems
+        {
+            SelectAll = CreateItem(
+                "全选", SymbolRegular.SelectAllOn20, _viewModel.SelectAllItemsCommand, "Ctrl+A",
+                enabled: _viewModel.CanSelectAll()),
+            Clear = CreateItem(
+                "全部取消", SymbolRegular.SelectAllOff20, _viewModel.ClearSelectionCommand, "Esc",
+                enabled: _viewModel.CanClearSelection()),
+            Invert = CreateItem(
+                "反向选择", SymbolRegular.ArrowSwap20, _viewModel.InvertSelectionCommand,
+                enabled: _viewModel.CanInvertSelection()),
+        };
+
+        target.Items.Add(new Separator());
+        target.Items.Add(items.SelectAll);
+        target.Items.Add(items.Clear);
+        target.Items.Add(items.Invert);
+        return items;
+    }
+
+    // 选择随选中项变化，菜单打开时重算可用状态
+    private void RefreshSelectionItems(SelectionMenuItems items)
+    {
+        if (items.SelectAll is not null)
+        {
+            items.SelectAll.IsEnabled = _viewModel.CanSelectAll();
+        }
+
+        if (items.Clear is not null)
+        {
+            items.Clear.IsEnabled = _viewModel.CanClearSelection();
+        }
+
+        if (items.Invert is not null)
+        {
+            items.Invert.IsEnabled = _viewModel.CanInvertSelection();
+        }
     }
 
     private static SymbolRegular ViewModeIcon(FileViewMode mode) => mode switch

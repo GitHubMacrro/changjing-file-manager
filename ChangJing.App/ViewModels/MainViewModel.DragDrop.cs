@@ -63,8 +63,8 @@ public sealed partial class MainViewModel
         IReadOnlyList<string> sourceDisplayPaths,
         string targetFolderDisplayPath)
     {
-        // 一次拖放 = 一步撤销（多条目合并为一个批量历史项）
-        var history = new OperationHistoryContext(kind, targetFolderDisplayPath, sourceDisplayPaths);
+        // 一次拖放 = 一步撤销（多条目合并为一个批量历史项），选择在发起时记下
+        var history = TrackTransfer(new OperationHistoryContext(kind, targetFolderDisplayPath, sourceDisplayPaths));
 
         FileTransferResult result = kind == OperationHistoryKind.Move
             ? _coordinator.Move(sourceDisplayPaths, targetFolderDisplayPath, history)

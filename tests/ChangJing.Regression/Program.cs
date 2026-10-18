@@ -32,6 +32,7 @@ public static class Program
         {
             CoreSuite.Run();
             UiSuite.Run();
+            SelectionSuite.Run();
             PublishSuiteRunner.Run();
             PerfSuite.Run();
             exitCode = H.FailureList.Count == 0 ? 0 : 1;

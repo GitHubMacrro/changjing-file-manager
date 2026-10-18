@@ -21,4 +21,7 @@ public sealed class OperationHistoryContext
 
     /// <summary>源条目普通路径</summary>
     public IReadOnlyList<string> SourcePaths { get; }
+
+    /// <summary>发起操作前的选中项路径，撤销后按它恢复选择；null 表示未记录</summary>
+    public IReadOnlyList<string>? SelectionBeforeOperation { get; set; }
 }

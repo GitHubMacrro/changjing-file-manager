@@ -27,6 +27,31 @@
                  PreviewKeyDown="OnWindowPreviewKeyDown">
 
     <ui:FluentWindow.Resources>
+        <!-- 项目复选框：只在复选框模式下、且悬停或已选中时显示 -->
+        <Style x:Key="ItemCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Focusable" Value="False" />
+            <!-- 单向同步行选中状态；点击自己接管，免得顺带改动整行选择 -->
+            <Setter Property="IsChecked" Value="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListViewItem}, Mode=OneWay}" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="controls:ListHitTest.IsItemChrome" Value="True" />
+            <Setter Property="AutomationProperties.AutomationId" Value="ItemCheckBox" />
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnItemCheckBoxPreviewMouseLeftButtonDown" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.ShowCheckBoxes, RelativeSource={RelativeSource AncestorType=ListView}}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding DataContext.ShowCheckBoxes, RelativeSource={RelativeSource AncestorType=ListView}}" Value="True" />
+                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListViewItem}}" Value="False" />
+                        <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListViewItem}}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility" Value="Hidden" />
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="CellSecondaryTextStyle" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="FontSize" Value="12" />
@@ -46,10 +71,17 @@
             <Grid ToolTip="{Binding ToolTipText}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Image Grid.Column="0"
+
+                <CheckBox Grid.Column="0"
+                          Margin="0,0,6,0"
+                          Style="{StaticResource ItemCheckBoxStyle}"
+                          AutomationProperties.Name="选择此项" />
+
+                <Image Grid.Column="1"
                        Width="16"
                        Height="16"
                        Margin="0,0,8,0"
@@ -57,7 +89,7 @@
                        controls:ListHitTest.IsNameContent="True"
                        Source="{Binding Icon}" />
 
-                <controls:MiddleEllipsisTextBlock Grid.Column="1"
+                <controls:MiddleEllipsisTextBlock Grid.Column="2"
                                                   HorizontalAlignment="Left"
                                                   VerticalAlignment="Center"
                                                   FontSize="{x:Static SystemFonts.MessageFontSize}"
@@ -68,7 +100,7 @@
                                                   controls:ListHitTest.IsNameContent="True"
                                                   Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibility}}" />
 
-                <Grid Grid.Column="1"
+                <Grid Grid.Column="2"
                       VerticalAlignment="Center"
                       controls:ListHitTest.IsNameContent="True"
                       Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibility}}">
@@ -110,7 +142,7 @@
                     </TextBlock>
                 </Grid>
 
-                <Border Grid.Column="2"
+                <Border Grid.Column="3"
                         Style="{StaticResource LongPathBadgeStyle}"
                         ToolTip="{Binding BadgeToolTip}"
                         Visibility="{Binding HasBadge, Converter={StaticResource BoolToVisibility}}">
@@ -373,6 +405,13 @@
                                              FallbackIconSource="{Binding}"
                                              UseThumbnail="{Binding IsImage}" />
 
+                    <!-- 图标类视图的复选框在左上角 -->
+                    <CheckBox Margin="2,0,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Top"
+                              Style="{StaticResource ItemCheckBoxStyle}"
+                              AutomationProperties.Name="选择此项" />
+
                     <Border Style="{StaticResource LongPathBadgeStyle}"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Top"
@@ -422,15 +461,20 @@
                   Margin="4,1" ToolTip="{Binding ToolTipText}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Image Grid.Column="0"
+                <CheckBox Grid.Column="0"
+                          Margin="0,0,4,0"
+                          Style="{StaticResource ItemCheckBoxStyle}"
+                          AutomationProperties.Name="选择此项" />
+                <Image Grid.Column="1"
                        Width="16"
                        Height="16"
                        Margin="0,0,6,0"
                        VerticalAlignment="Center"
                        Source="{Binding Icon}" />
-                <TextBlock Grid.Column="1"
+                <TextBlock Grid.Column="2"
                            VerticalAlignment="Center"
                            FontSize="{x:Static SystemFonts.MessageFontSize}"
                            Foreground="{DynamicResource CjTextPrimaryBrush}"
@@ -438,7 +482,7 @@
                            TextTrimming="CharacterEllipsis"
                            ToolTip="{Binding Name}"
                            Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibility}}" />
-                <TextBox Grid.Column="1"
+                <TextBox Grid.Column="2"
                          x:Name="RenameEditor"
                          Padding="2,0"
                          VerticalContentAlignment="Center"
@@ -459,10 +503,16 @@
                   Margin="6,4" ToolTip="{Binding ToolTipText}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <controls:ThumbnailImage Grid.Column="0"
+                <CheckBox Grid.Column="0"
+                          Margin="0,0,6,0"
+                          Style="{StaticResource ItemCheckBoxStyle}"
+                          AutomationProperties.Name="选择此项" />
+
+                <controls:ThumbnailImage Grid.Column="1"
                                          Width="48"
                                          Height="48"
                                          Margin="0,0,8,0"
@@ -476,7 +526,7 @@
                                          FallbackIconSource="{Binding}"
                                          UseThumbnail="{Binding IsImage}" />
 
-                <Grid Grid.Column="1" VerticalAlignment="Center">
+                <Grid Grid.Column="2" VerticalAlignment="Center">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -522,11 +572,17 @@
             <Grid Margin="8,3" MinHeight="54" ToolTip="{Binding ToolTipText}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Image Grid.Column="0"
+                <CheckBox Grid.Column="0"
+                          Margin="0,0,6,0"
+                          Style="{StaticResource ItemCheckBoxStyle}"
+                          AutomationProperties.Name="选择此项" />
+
+                <Image Grid.Column="1"
                        Width="32"
                        Height="32"
                        Margin="0,0,10,0"
@@ -534,7 +590,7 @@
                        RenderOptions.BitmapScalingMode="HighQuality"
                        Source="{Binding IconForContent}" />
 
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
                     <controls:MiddleEllipsisTextBlock VerticalAlignment="Center"
                                                       FontSize="{x:Static SystemFonts.MessageFontSize}"
                                                       Foreground="{DynamicResource CjTextPrimaryBrush}"
@@ -560,7 +616,7 @@
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="2"
+                <StackPanel Grid.Column="3"
                             MinWidth="220"
                             Margin="16,0,0,0"
                             VerticalAlignment="Center">

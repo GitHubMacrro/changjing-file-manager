@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -156,6 +157,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
 
         _viewModel.ApplyViewMode(ParseViewMode(settings.ViewMode), settings.IconSize);
         _viewModel.IsCompactMode = settings.IsCompactMode;
+        _viewModel.ShowCheckBoxes = settings.ShowCheckBoxes;
         ApplyDetailsRowStyle();
 
         Loaded += OnWindowLoaded;
@@ -491,6 +493,22 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
             return;
         }
 
+        // Esc 在列表里取消全部选择（重命名编辑框的 Esc 已在上面的文本框分支放行）
+        if (key == Key.Escape && !_viewModel.IsRecycleBinView && _viewModel.CanClearSelection())
+        {
+            Execute(_viewModel.ClearSelectionCommand);
+            e.Handled = true;
+            return;
+        }
+
+        // Ctrl+Space 切换焦点项
+        if (key == Key.Space && ctrl)
+        {
+            ToggleFocusedItemSelection();
+            e.Handled = true;
+            return;
+        }
+
         switch (key)
         {
             case Key.Left when alt:
@@ -541,7 +559,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
                 }
                 else
                 {
-                    ActiveListView.SelectAll();
+                    // 走命令才会同步视图模型的选择与状态栏
+                    Execute(_viewModel.SelectAllItemsCommand);
                     ActiveListView.Focus();
                 }
 
@@ -781,6 +800,83 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
         _viewModel.RelaunchElevatedRequested += OnRelaunchElevatedRequested;
 
         _viewModel.PathRepairRequested += OnPathRepairRequested;
+
+        _viewModel.SelectionApplyRequested += OnSelectionApplyRequested;
+    }
+
+    // 选择命令：全选 / 全部取消 / 反选 / 切换焦点项都在活动列表上做
+    private void OnSelectionApplyRequested(object? sender, IReadOnlyList<FileItemViewModel> items)
+    {
+        System.Windows.Controls.ListView list = ActiveListView;
+
+        // 批量增删会逐项发 SelectionChanged，先静音再一次性同步选择模型
+        _suppressSelectionSync = true;
+        try
+        {
+            ApplySelectionToList(list, items);
+        }
+        finally
+        {
+            _suppressSelectionSync = false;
+        }
+
+        if (items.Count > 0 && list.SelectedItems.Count > 0)
+        {
+            list.ScrollIntoView(list.SelectedItems[0]);
+        }
+
+        _viewModel.UpdateSelection(items);
+    }
+
+    private bool _suppressSelectionSync;
+
+    // 大批量走 SelectAll / UnselectAll 这类原生批量接口，避免逐项改 SelectedItems
+    private static void ApplySelectionToList(
+        System.Windows.Controls.ListView list,
+        IReadOnlyList<FileItemViewModel> items)
+    {
+        int total = list.Items.Count;
+
+        if (items.Count == 0)
+        {
+            list.UnselectAll();
+            return;
+        }
+
+        if (items.Count >= total)
+        {
+            list.SelectAll();
+            return;
+        }
+
+        // 目标集合偏大时，全选后摘掉少数不选的，比逐个加更快
+        if (items.Count > total / 2)
+        {
+            var wanted = new HashSet<FileItemViewModel>(items);
+            list.SelectAll();
+
+            var remove = new List<object>();
+            foreach (object entry in list.SelectedItems)
+            {
+                if (entry is FileItemViewModel file && !wanted.Contains(file))
+                {
+                    remove.Add(entry);
+                }
+            }
+
+            foreach (object entry in remove)
+            {
+                list.SelectedItems.Remove(entry);
+            }
+
+            return;
+        }
+
+        list.UnselectAll();
+        foreach (FileItemViewModel item in items)
+        {
+            list.SelectedItems.Add(item);
+        }
     }
 
     // 设置
@@ -1205,11 +1301,22 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
         {
             ApplyDetailsRowStyle();
         }
+        else if (e.PropertyName is nameof(MainViewModel.ShowCheckBoxes))
+        {
+            // 复选框开关变化后立即落盘
+            _settings.ShowCheckBoxes = _viewModel.ShowCheckBoxes;
+            _services.SettingsService.Save(_settings);
+            UpdateColumnHeaders();
+        }
         else if (e.PropertyName is nameof(MainViewModel.IsSearchResultView)
                  or nameof(MainViewModel.ShowSearchFolderColumn))
         {
             ApplySearchFolderColumn();
             UpdateColumnHeaders();
+        }
+        else if (e.PropertyName is nameof(MainViewModel.HeaderCheckState))
+        {
+            UpdateHeaderCheckBox();
         }
     }
 
@@ -1456,7 +1563,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
     // 列头文字写进 GridView 列：排序箭头叠在标题上方居中，非排序列只有文字
     private void UpdateColumnHeaders()
     {
-        NameColumn.Header = BuildHeaderContent(_viewModel.NameColumnHeader, FileSortColumn.Name);
+        NameColumn.Header = BuildNameHeaderContent();
         DateColumn.Header = BuildHeaderContent(_viewModel.DateColumnHeader, FileSortColumn.DateModified);
         TypeColumn.Header = BuildHeaderContent(_viewModel.TypeColumnHeader, FileSortColumn.Type);
         SizeColumn.Header = BuildHeaderContent(_viewModel.SizeColumnHeader, FileSortColumn.Size);
@@ -1465,6 +1572,82 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
         SearchFolderColumn.Header = _viewModel.ShowSearchFolderColumn
             ? BuildHeaderContent(_viewModel.SearchFolderColumnHeader, FileSortColumn.Folder)
             : string.Empty;
+
+        UpdateHeaderCheckBox();
+    }
+
+    // 名称列头：复选框模式下最左侧挂全选框
+    private UIElement BuildNameHeaderContent()
+    {
+        UIElement title = BuildHeaderContent(_viewModel.NameColumnHeader, FileSortColumn.Name);
+        if (!_viewModel.ShowCheckBoxes)
+        {
+            _headerCheckBox = null;
+            return title;
+        }
+
+        _headerCheckBox = new CheckBox
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 0),
+            IsThreeState = true,
+            Focusable = false,
+        };
+
+        _headerCheckBox.SetValue(AutomationProperties.AutomationIdProperty, "HeaderCheckBox");
+        _headerCheckBox.SetValue(AutomationProperties.NameProperty, "全选");
+        _headerCheckBox.Click += OnHeaderCheckBoxClick;
+
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        panel.Children.Add(_headerCheckBox);
+        panel.Children.Add(title);
+        return panel;
+    }
+
+    private CheckBox? _headerCheckBox;
+
+    private bool _updatingHeaderCheckBox;
+
+    // 表头全选框：全选 / 全不选，部分选中显示半选
+    private void OnHeaderCheckBoxClick(object sender, RoutedEventArgs e)
+    {
+        // 别让点击冒泡到列头触发排序
+        e.Handled = true;
+
+        if (_updatingHeaderCheckBox || sender is not CheckBox)
+        {
+            return;
+        }
+
+        // 半选或未选都点成全选，已全选则清空，跟资源管理器一致
+        if (_viewModel.HeaderCheckState == true)
+        {
+            Execute(_viewModel.ClearSelectionCommand);
+        }
+        else
+        {
+            Execute(_viewModel.SelectAllItemsCommand);
+        }
+
+        UpdateHeaderCheckBox();
+    }
+
+    private void UpdateHeaderCheckBox()
+    {
+        if (_headerCheckBox is null)
+        {
+            return;
+        }
+
+        _updatingHeaderCheckBox = true;
+        try
+        {
+            _headerCheckBox.IsChecked = _viewModel.HeaderCheckState;
+        }
+        finally
+        {
+            _updatingHeaderCheckBox = false;
+        }
     }
 
     // 标题与箭头叠在同一格，箭头不占布局高度，保证所有列标题同一基线
@@ -1608,10 +1791,101 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
 
     private void OnFileListSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        // 批量设置选择期间不逐项同步，结束后由调用方统一更新一次
+        if (_suppressSelectionSync)
+        {
+            return;
+        }
+
         if (sender is System.Windows.Controls.ListView list)
         {
             _viewModel.UpdateSelection(list.SelectedItems.OfType<FileItemViewModel>());
         }
+    }
+
+    // Ctrl+Space：只切换焦点项，其它已选项保持不动
+    private void ToggleFocusedItemSelection()
+    {
+        if (_viewModel.IsRecycleBinView)
+        {
+            return;
+        }
+
+        System.Windows.Controls.ListView list = ActiveListView;
+
+        // 焦点可能在未选中的行上，先取焦点行，取不到再用当前选中项
+        FileItemViewModel? item = Keyboard.FocusedElement is DependencyObject focused
+            && FindAncestor<ListViewItem>(focused) is { DataContext: FileItemViewModel focusedItem }
+            ? focusedItem
+            : list.SelectedItem as FileItemViewModel;
+
+        if (item is null)
+        {
+            return;
+        }
+
+        if (list.SelectedItems.Contains(item))
+        {
+            list.SelectedItems.Remove(item);
+        }
+        else
+        {
+            list.SelectedItems.Add(item);
+        }
+
+        // 取消选中会清掉 ListView 的焦点锚点，把键盘焦点按回该行，方便连续切换
+        if (list.ItemContainerGenerator.ContainerFromItem(item) is ListViewItem container)
+        {
+            container.Focus();
+        }
+
+        _viewModel.UpdateSelection(list.SelectedItems.OfType<FileItemViewModel>());
+    }
+
+    // 复选框：按下即切换该行，拦住默认行为以免整行选择跟着变
+    private void OnItemCheckBoxPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_applyingCheckBox || sender is not CheckBox box)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        ApplyCheckBoxSelection(box, select: box.IsChecked != true);
+    }
+
+    private bool _applyingCheckBox;
+
+    private void ApplyCheckBoxSelection(CheckBox box, bool select)
+    {
+        if (FindAncestor<ListViewItem>(box) is not { } container
+            || container.DataContext is not FileItemViewModel item
+            || FindAncestor<System.Windows.Controls.ListView>(container) is not { } list)
+        {
+            return;
+        }
+
+        _applyingCheckBox = true;
+        try
+        {
+            if (select)
+            {
+                if (!list.SelectedItems.Contains(item))
+                {
+                    list.SelectedItems.Add(item);
+                }
+            }
+            else
+            {
+                list.SelectedItems.Remove(item);
+            }
+        }
+        finally
+        {
+            _applyingCheckBox = false;
+        }
+
+        _viewModel.UpdateSelection(list.SelectedItems.OfType<FileItemViewModel>());
     }
 
     // Ctrl+单击已选中项 = 取消选中，WPF 的 ListView 默认不取消
@@ -1626,6 +1900,12 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
         var hitItem = FindAncestor<System.Windows.Controls.ListViewItem>(e.OriginalSource as DependencyObject);
         bool nameCellOnly = Controls.RubberBandSelector.GetNameCellOnly(list);
         bool onNameContent = Controls.ListHitTest.IsNameContentHit(e.OriginalSource as DependencyObject);
+
+        // 复选框自己处理，别当成 Ctrl+单击取消选中
+        if (Controls.ListHitTest.IsItemChromeHit(e.OriginalSource as DependencyObject))
+        {
+            return;
+        }
 
         // 只处理点在条目上的情况；NameCellOnly 模式要求点在名称内容上
         if (hitItem?.DataContext is not FileItemViewModel item)
@@ -2087,6 +2367,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IDeleteConfirmat
             _settings.ViewMode = _viewModel.ViewMode.ToString();
             _settings.IconSize = _viewModel.IconSize;
             _settings.IsCompactMode = _viewModel.IsCompactMode;
+            _settings.ShowCheckBoxes = _viewModel.ShowCheckBoxes;
 
             _services.SettingsService.Save(_settings);
 
