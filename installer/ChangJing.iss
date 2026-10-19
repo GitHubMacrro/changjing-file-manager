@@ -2,8 +2,8 @@
 ; 畅径（ChangJing）安装脚本 —— Inno Setup 6
 ; ----------------------------------------------------------------------------
 ; 用法：
-;   ISCC.exe /DArch=x64 [/DAppVersion=1.0.0] ChangJing.iss
-;   ISCC.exe /DArch=x86 [/DAppVersion=1.0.0] ChangJing.iss
+;   ISCC.exe /DArch=x64 [/DAppVersion=1.1.0] ChangJing.iss
+;   ISCC.exe /DArch=x86 [/DAppVersion=1.1.0] ChangJing.iss
 ;
 ; 两个架构共用同一 AppId，因此可互相覆盖升级。
 ; 依赖同目录下的 ChineseSimplified.isl（官方简体中文语言文件）。
@@ -14,7 +14,7 @@
   #define Arch "x64"
 #endif
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 #ifndef OutputDir
   #define OutputDir "..\deliver\" + AppVersion
@@ -35,7 +35,7 @@
 AppId={{e3952796-0245-4e68-9efd-4be5f30a97e8}
 AppName=畅径
 AppVersion={#AppVersion}
-VersionInfoVersion=1.0.0.0
+VersionInfoVersion={#AppVersion}.0
 AppPublisher=鱼塘泛舟-SQ
 AppPublisherURL=https://github.com/GitHubMacrro/changjing-file-manager
 AppSupportURL=https://github.com/GitHubMacrro/changjing-file-manager

@@ -13,10 +13,10 @@
     <AssemblyName>ChangJing</AssemblyName>
     <RootNamespace>ChangJing.App</RootNamespace>
 
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-    <InformationalVersion>1.0.0</InformationalVersion>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <InformationalVersion>1.1.0</InformationalVersion>
 
     <AssemblyTitle>畅径</AssemblyTitle>
     <Product>畅径</Product>
